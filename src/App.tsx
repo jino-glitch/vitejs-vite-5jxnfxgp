@@ -171144,6 +171144,7 @@ export default function SalesReport() {
   ]);
   const [selectedDCs, setSelectedDCs] = useState([...ALL_DCS]);
   const [selectedProducts, setSelectedProducts] = useState([...ALL_PRODUCTS]);
+  const [selectedVendors, setSelectedVendors] = useState(ALL_VENDORS);
   const [selectedStores, setSelectedStores] = useState(
     Object.values(DC_STORES).flat()
   );
@@ -171291,6 +171292,7 @@ export default function SalesReport() {
   // ── WoW PRODUCT ──
   const wowProdRows = useMemo(() => {
     return selectedProducts
+      .filter((p) => selectedVendors.includes(PRODUCT_VENDOR[p] || 'UNKNOWN'))
       .map((p) => {
         const tw = agg.prod_tw[p] || 0,
           lw = agg.prod_lw[p] || 0,
@@ -171407,6 +171409,7 @@ export default function SalesReport() {
   const ytdProdRows = useMemo(
     () =>
       selectedProducts
+        .filter((p) => selectedVendors.includes(PRODUCT_VENDOR[p] || 'UNKNOWN'))
         .map((p) => {
           const v26 = agg.ytd_prod26[p] || 0,
             v25 = agg.ytd_prod25[p] || 0;
@@ -171793,6 +171796,12 @@ export default function SalesReport() {
             options={ALL_PRODUCTS}
             selected={selectedProducts}
             onChange={setSelectedProducts}
+          />
+          <MultiSelect
+            label="VENDOR"
+            options={ALL_VENDORS}
+            selected={selectedVendors}
+            onChange={setSelectedVendors}
           />
         </div>
       </div>
