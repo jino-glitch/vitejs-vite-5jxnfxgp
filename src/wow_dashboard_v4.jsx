@@ -714,6 +714,223 @@ export default function App() {
     return byRegion;
   },[selFW,selDC,districtSort]);
 
+  // ── TOOL DEFINITIONS ────────────────────────────────────────────────────────
+  const CHAT_TOOLS = [
+    {name:"get_store_detail",description:"Get detailed sales, ST%, pieces received/sold, and allocation status for a specific store. Use when asked about a specific store number.",input_schema:{type:"object",properties:{store:{type:"string",description:"Store number e.g. '202'"},category:{type:"string",description:"Category key: 5inch, 3inch, fused, cascades. Default: 5inch"},fws:{type:"array",items:{type:"number"},description:"Fiscal weeks to include e.g. [202609,202610,202611,202612]. Default: last 4 weeks"}},required:["store"]}},
+    {name:"get_dc_summary",description:"Get all stores in a DC ranked by ST%, with sales and allocation status. Use when asked about a specific DC.",input_schema:{type:"object",properties:{dc:{type:"string",description:"DC name e.g. FULRTNCADC"},category:{type:"string",description:"Category key: 5inch, 3inch, fused, cascades. Default: 5inch"},top_n:{type:"number",description:"Number of top/bottom stores to return. Default: 10"}},required:["dc"]}},
+    {name:"get_district_detail",description:"Get all stores in a district with FY26 vs FY25 YoY sales comparison. Use when asked about a district.",input_schema:{type:"object",properties:{district:{type:"string",description:"District name e.g. D55 or D23"}},required:["district"]}},
+    {name:"get_fw_breakdown",description:"Get week-by-week sales and units for a product category and/or DC. Use when asked about trends or specific fiscal weeks.",input_schema:{type:"object",properties:{dc:{type:"string",description:"DC name, or 'ALL' for all DCs"},category:{type:"string",description:"Category: 5inch, 3inch, fused, cascades, or product name like PLANT-5-ORCHID"},fws:{type:"array",items:{type:"number"},description:"Specific fiscal weeks. Default: all FW01-FW12"}},required:[]}},
+    {name:"get_allocation_recs",description:"Get allocation recommendations: which stores qualify for +1 or +2 cases based on ST% and consecutive high weeks. Use when asked about recommendations or who should get more cases.",input_schema:{type:"object",properties:{dc:{type:"string",description:"DC name, or 'ALL' for all DCs. Default: ALL"},category:{type:"string",description:"Category key. Default: 5inch"},status:{type:"string",description:"Filter by status: high_performer, watch, standard, skip, or ALL. Default: ALL"}},required:[]}},
+    {name:"get_corrections_detail",description:"Get the full corrections log with store-level detail. Use when asked about corrections or overrides.",input_schema:{type:"object",properties:{dc:{type:"string",description:"DC name or ALL"},product:{type:"string",description:"Product name filter or ALL"}},required:[]}},
+  ];
+
+  const executeTool = (name, input) => {
+    const prods5 = ["PLANT-5-ORCHID","PLANT-ORCHID","ORCHID-PREMIUM-CERAMIC","ORCHID-PLANT","ORCHID-COLOR-EVERYDAY-5 IN","ORCHID-LARGE WHITE"];
+    const prods3 = ["PLANT-ORCHID-SMALL","ORCHID-SMALL"];
+    const prodsF = ["PLANT-ORCHID-FUSED","ORCHID-FUSED-COLORED"];
+    const prodsC = ["PLANT-ORCHID-CASCADE-PREMIUM","ORCHID-CASCADE","ORCHID-WATERFALL-PREMIUM-5IN"];
+    const catProds = {5inch:prods5, 3inch:prods3, fused:prodsF, cascades:prodsC};
+    const last4 = ALL_FWS_FULL.slice(-4);
+
+    if(name==="get_store_detail"){
+      const {store, category="5inch", fws=last4} = input;
+      const meta = STORE_META[store];
+      if(!meta) return `Store ${store} not found.`;
+      const dc = meta.dc;
+      const ob = STORE_OUTBOUND[category]?.[store]||{};
+      const rows = fws.map(fw=>{
+        const obFw = ob[fw]||[0,0];
+        const sd = STORE_DATA.find(d=>d[0]===fw&&d[1]===dc&&d[2]===store);
+        const dcSales = STORE_DATA.filter(d=>d[0]===fw&&d[1]===dc).reduce((a,d)=>a+d[3],0);
+        const dcUnits = DATA26.filter(d=>d[0]===fw&&d[1]===dc&&(catProds[category]||prods5).includes(d[2])).reduce((a,d)=>a+d[5],0);
+        const sold = (sd&&dcSales>0&&dcUnits>0)?Math.round((sd[3]/dcSales)*dcUnits):0;
+        const st = obFw[1]>0?(sold/obFw[1]*100).toFixed(1):null;
+        return `FW${String(fw).slice(-2)}: Sales $${sd?Math.round(sd[3]).toLocaleString():0}, Pieces Rcvd ${obFw[1]}, Sold ~${sold}, ST% ${st?st+'%':'N/A'}`;
+      });
+      return `Store #${store} — ${meta.name}\nDC: ${dc} | District: ${meta.district} | Region: ${meta.region}\n\n${rows.join('\n')}`;
+    }
+
+    if(name==="get_dc_summary"){
+      const {dc, category="5inch", top_n=10} = input;
+      const stores = (DC_STORES[dc]||[]).map(s=>String(s));
+      if(!stores.length) return `DC ${dc} not found.`;
+      const stList = [];
+      stores.forEach(store=>{
+        const ob = STORE_OUTBOUND[category]?.[store]||{};
+        let totalPieces=0, totalSold=0, totalSales=0;
+        last4.forEach(fw=>{
+          const obFw = ob[fw]||[0,0]; totalPieces+=obFw[1];
+          const sd = STORE_DATA.find(d=>d[0]===fw&&d[1]===dc&&d[2]===store);
+          const dcSales = STORE_DATA.filter(d=>d[0]===fw&&d[1]===dc).reduce((a,d)=>a+d[3],0);
+          const dcUnits = DATA26.filter(d=>d[0]===fw&&d[1]===dc&&(catProds[category]||prods5).includes(d[2])).reduce((a,d)=>a+d[5],0);
+          if(sd){totalSales+=sd[3];if(dcSales>0&&dcUnits>0)totalSold+=Math.round((sd[3]/dcSales)*dcUnits);}
+        });
+        const st = totalPieces>0?(totalSold/totalPieces*100):null;
+        stList.push({store,name:STORE_META[store]?.name||store,st,sales:totalSales,pieces:totalPieces});
+      });
+      stList.sort((a,b)=>(b.st||0)-(a.st||0));
+      const top = stList.slice(0,top_n);
+      const bottom = stList.slice(-top_n).reverse();
+      return `DC: ${dc} | ${stores.length} stores | Category: ${category}\n\nTOP ${top_n} by ST%:\n${top.map(s=>`#${s.store} ${s.name}: ST% ${s.st?s.st.toFixed(1)+'%':'N/A'}, Sales $${Math.round(s.sales).toLocaleString()}`).join('\n')}\n\nBOTTOM ${top_n} by ST%:\n${bottom.map(s=>`#${s.store} ${s.name}: ST% ${s.st?s.st.toFixed(1)+'%':'N/A'}, Sales $${Math.round(s.sales).toLocaleString()}`).join('\n')}`;
+    }
+
+    if(name==="get_district_detail"){
+      const {district} = input;
+      const distStores = Object.entries(STORE_META).filter(([,m])=>m.district===district).map(([s])=>s);
+      if(!distStores.length) return `District ${district} not found.`;
+      const fw25set = new Set(ALL_FWS_FULL.map(fw=>FW25_MAP[fw]).filter(Boolean));
+      const rows = distStores.map(store=>{
+        const meta = STORE_META[store];
+        const s26 = STORE_DATA.filter(d=>d[2]===store).reduce((a,d)=>a+d[3],0);
+        const s25 = STORE_DATA25.filter(d=>d[2]===store&&fw25set.has(d[0])).reduce((a,d)=>a+d[3],0);
+        const yoy = s25>0?((s26-s25)/s25*100).toFixed(1):null;
+        return `#${store} ${meta.name}: FY26 $${Math.round(s26).toLocaleString()} vs FY25 $${Math.round(s25).toLocaleString()} = ${yoy?yoy+'%':'N/A'} YoY`;
+      }).sort((a,b)=>a.localeCompare(b));
+      const totS26 = distStores.reduce((a,s)=>a+STORE_DATA.filter(d=>d[2]===s).reduce((b,d)=>b+d[3],0),0);
+      const totS25 = distStores.reduce((a,s)=>a+STORE_DATA25.filter(d=>d[2]===s&&fw25set.has(d[0])).reduce((b,d)=>b+d[3],0),0);
+      const totYoy = totS25>0?((totS26-totS25)/totS25*100).toFixed(1):null;
+      return `District: ${district} | ${distStores.length} stores\nTotal: FY26 $${Math.round(totS26).toLocaleString()} vs FY25 $${Math.round(totS25).toLocaleString()} = ${totYoy?totYoy+'%':'N/A'} YoY\n\n${rows.join('\n')}`;
+    }
+
+    if(name==="get_fw_breakdown"){
+      const {dc="ALL", category="5inch", fws=ALL_FWS_FULL} = input;
+      const prods = catProds[category]||[category];
+      const rows = fws.map(fw=>{
+        const filtered = dc==="ALL"
+          ? DATA26.filter(d=>d[0]===fw&&prods.includes(d[2]))
+          : DATA26.filter(d=>d[0]===fw&&d[1]===dc&&prods.includes(d[2]));
+        const s26 = filtered.reduce((a,d)=>a+d[4],0);
+        const u26 = filtered.reduce((a,d)=>a+d[5],0);
+        const fw25 = FW25_MAP[fw];
+        const f25 = fw25?(dc==="ALL"?DATA25.filter(d=>d[0]===fw25&&prods.some(p=>d[2]===p)):DATA25.filter(d=>d[0]===fw25&&d[1]===dc&&prods.some(p=>d[2]===p))):[];
+        const s25 = f25.reduce((a,d)=>a+d[3],0);
+        const yoy = s25>0?((s26-s25)/s25*100).toFixed(1):null;
+        return `FW${String(fw).slice(-2)}: $${Math.round(s26).toLocaleString()} (${u26} units)${yoy?' | YoY: '+yoy+'%':''}`;
+      });
+      return `${category} sales ${dc==="ALL"?"all DCs":dc} FW01-FW12:\n${rows.join('\n')}`;
+    }
+
+    if(name==="get_allocation_recs"){
+      const {dc="ALL", category="5inch", status="ALL"} = input;
+      const ob = STORE_OUTBOUND[category]||{};
+      const stores = dc==="ALL" ? Object.keys(STORE_META) : (DC_STORES[dc]||[]).map(String);
+      const results = [];
+      stores.forEach(store=>{
+        const meta = STORE_META[store]; if(!meta) return;
+        const storeDC = meta.dc;
+        let totalPieces=0, totalSold=0; let consec=0;
+        for(const fw of [...ALL_FWS_FULL].reverse()){
+          const obFw = ob[store]?.[fw]||[0,0]; if(!obFw[1]) break;
+          const sd = STORE_DATA.find(d=>d[0]===fw&&d[1]===storeDC&&d[2]===store);
+          const dcSales = STORE_DATA.filter(d=>d[0]===fw&&d[1]===storeDC).reduce((a,d)=>a+d[3],0);
+          const dcUnits = DATA26.filter(d=>d[0]===fw&&d[1]===storeDC&&(catProds[category]||prods5).includes(d[2])).reduce((a,d)=>a+d[5],0);
+          if(sd&&dcSales>0&&dcUnits>0){const st=Math.round((sd[3]/dcSales)*dcUnits)/obFw[1]*100;if(st>=85)consec++;else break;}else break;
+        }
+        last4.forEach(fw=>{
+          const obFw = ob[store]?.[fw]||[0,0]; totalPieces+=obFw[1];
+          const sd = STORE_DATA.find(d=>d[0]===fw&&d[1]===storeDC&&d[2]===store);
+          const dcSales = STORE_DATA.filter(d=>d[0]===fw&&d[1]===storeDC).reduce((a,d)=>a+d[3],0);
+          const dcUnits = DATA26.filter(d=>d[0]===fw&&d[1]===storeDC&&(catProds[category]||prods5).includes(d[2])).reduce((a,d)=>a+d[5],0);
+          if(sd&&dcSales>0&&dcUnits>0)totalSold+=Math.round((sd[3]/dcSales)*dcUnits);
+        });
+        if(totalPieces===0) return;
+        const st = totalSold/totalPieces*100;
+        let rec; if(st<60)rec="skip";else if(st<85)rec="standard";else if(consec>=3)rec="high_performer";else rec="watch";
+        if(status!=="ALL"&&rec!==status) return;
+        const cases = rec==="high_performer"?"+2":rec==="skip"?"0":"+1";
+        results.push(`#${store} ${meta.name} (${storeDC}): ST% ${st.toFixed(1)}%, ${consec} consec → ${cases} cases [${rec}]`);
+      });
+      return `Allocation recs — ${category}, ${dc==="ALL"?"all DCs":dc}:\n${results.length} stores\n\n${results.slice(0,30).join('\n')}${results.length>30?`\n...and ${results.length-30} more`:''}`;
+    }
+
+    if(name==="get_corrections_detail"){
+      const {dc="ALL", product="ALL"} = input;
+      const filtered = CORRECTIONS_LOG.filter(r=>(dc==="ALL"||r.dc===dc)&&(product==="ALL"||r.product===product));
+      const summary = {};
+      filtered.forEach(r=>{
+        const k=r.dc+"|"+r.product;
+        summary[k]=summary[k]||{dc:r.dc,product:r.product,stores:0,origTotal:0,corrTotal:0};
+        summary[k].stores++; summary[k].origTotal+=r.orig; summary[k].corrTotal+=r.corrected;
+      });
+      const rows = Object.values(summary).map(s=>`${s.dc} | ${s.product}: ${s.stores} stores, ${s.origTotal}→${s.corrTotal} cases (${s.corrTotal-s.origTotal})`);
+      return `Corrections (FW12):\n${rows.join('\n')}\n\nTotal: ${filtered.length} corrections, ${filtered.reduce((a,r)=>a+r.diff,0)} case delta`;
+    }
+
+    return `Tool ${name} not implemented.`;
+  };
+
+  const handleChatSend = async (q) => {
+    if(!q||chatLoading) return;
+    setChatInput("");
+    setChatMessages(prev=>[...prev,{role:"user",content:q}]);
+    setChatLoading(true);
+    try{
+      const fw25set = new Set(ALL_FWS_FULL.map(fw=>FW25_MAP[fw]).filter(Boolean));
+      const distYoY={};
+      STORE_DATA.forEach(d=>{const m=STORE_META[d[2]];if(!m)return;distYoY[m.district]=distYoY[m.district]||{s26:0,s25:0,region:m.region};distYoY[m.district].s26+=d[3];});
+      STORE_DATA25.filter(d=>fw25set.has(d[0])).forEach(d=>{const m=STORE_META[d[2]];if(!m)return;if(distYoY[m.district])distYoY[m.district].s25+=d[3];});
+      const distSummary=Object.entries(distYoY).map(([d,v])=>({district:d,region:v.region,s26:Math.round(v.s26),s25:Math.round(v.s25),yoyP:v.s25>0?((v.s26-v.s25)/v.s25*100).toFixed(1):null})).sort((a,b)=>parseFloat(b.yoyP||0)-parseFloat(a.yoyP||0));
+
+      const systemPrompt = `You are a floral sales data analyst for Sprouts Farmers Market. You have access to FY2026 and FY2025 floral data through tools.
+
+OVERVIEW:
+- FY26 YTD Sales (FW01-FW12): $${(DATA26.reduce((a,d)=>a+d[4],0)/1000).toFixed(1)}K
+- FY25 comparison: $${(DATA25.reduce((a,d)=>a+d[3],0)/1000).toFixed(1)}K
+- DCs: ${[...new Set(DATA26.map(d=>d[1]))].join(', ')}
+- Total stores: ${Object.keys(STORE_META).length}
+
+DISTRICT YOY (top 5 / bottom 5):
+Best: ${distSummary.slice(0,5).map(d=>`${d.district}(${d.yoyP}%)`).join(', ')}
+Worst: ${distSummary.slice(-5).map(d=>`${d.district}(${d.yoyP}%)`).join(', ')}
+
+CORRECTIONS: FULRTNCADC FW12 — 120 corrections, PLANT-5-ORCHID -51 cases, PLANT-ORCHID-FUSED -70 cases.
+
+Use tools to look up specific stores, DCs, districts, or weekly trends. Be concise and use real numbers.`;
+
+      // Multi-turn tool use loop
+      let messages = [...chatMessages.filter(m=>typeof m.content==='string'), {role:"user",content:q}];
+      let finalReply = "";
+      let iterations = 0;
+
+      while(iterations < 5){
+        iterations++;
+        const resp = await fetch("/api/chat",{
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1024,system:systemPrompt,messages,tools:CHAT_TOOLS})
+        });
+        const data = await resp.json();
+        if(data.error) { finalReply = data.error.message||"API error."; break; }
+
+        const textBlock = data.content?.find(c=>c.type==="text");
+        const toolUseBlocks = data.content?.filter(c=>c.type==="tool_use")||[];
+
+        if(data.stop_reason==="end_turn"||toolUseBlocks.length===0){
+          finalReply = textBlock?.text||"No response.";
+          break;
+        }
+
+        // Execute tools and build tool_results
+        const toolResults = toolUseBlocks.map(tu=>({
+          type:"tool_result",
+          tool_use_id:tu.id,
+          content:executeTool(tu.name, tu.input)
+        }));
+
+        // Add assistant response + tool results to messages
+        messages = [...messages,
+          {role:"assistant",content:data.content},
+          {role:"user",content:toolResults}
+        ];
+      }
+
+      setChatMessages(prev=>[...prev,{role:"assistant",content:finalReply}]);
+    }catch(err){
+      setChatMessages(prev=>[...prev,{role:"assistant",content:"Error: "+err.message}]);
+    }
+    setChatLoading(false);
+  };
+
   // ── INSIGHTS DATA ────────────────────────────────────────────────────────────
   const insightsData = useMemo(()=>{
     const last4 = ALL_FWS_FULL.slice(-4);
@@ -2100,96 +2317,13 @@ export default function App() {
                   onKeyDown={async e=>{
                     if(e.key==="Enter"&&!e.shiftKey&&chatInput.trim()&&!chatLoading){
                       e.preventDefault();
-                      const q = chatInput.trim();
-                      setChatInput("");
-                      setChatMessages(prev=>[...prev,{role:"user",content:q}]);
-                      setChatLoading(true);
-                      try{
-                        // Build context summary for Claude
-                        const ytd26 = DATA26.reduce((a,d)=>a+d[4],0);
-                        const ytd25 = DATA25.reduce((a,d)=>a+d[3],0);
-                        const fws = ALL_FWS_FULL;
-                        const dcList = [...new Set(DATA26.map(d=>d[1]))].join(', ');
-                        const prodList = [...new Set(DATA26.map(d=>d[2]))].slice(0,10).join(', ');
-                        const totalStores = Object.keys(STORE_META).length;
-                        const fw25set = new Set(fws.map(fw=>FW25_MAP[fw]).filter(Boolean));
-                        const distYoYCtx = {};
-                        STORE_DATA.filter(d=>fws.includes(d[0])).forEach(d=>{const m=STORE_META[d[2]];if(!m)return;distYoYCtx[m.district]=distYoYCtx[m.district]||{s26:0,s25:0,region:m.region};distYoYCtx[m.district].s26+=d[3];});
-                        STORE_DATA25.filter(d=>fw25set.has(d[0])).forEach(d=>{const m=STORE_META[d[2]];if(!m)return;if(distYoYCtx[m.district])distYoYCtx[m.district].s25+=d[3];});
-                        const distSummary = Object.entries(distYoYCtx).map(([d,v])=>({district:d,region:v.region,s26:Math.round(v.s26),s25:Math.round(v.s25),yoyP:v.s25>0?((v.s26-v.s25)/v.s25*100).toFixed(1):null})).sort((a,b)=>parseFloat(a.yoyP||0)-parseFloat(b.yoyP||0));
-                        const correctionsCtx = [...new Set(CORRECTIONS_LOG.map(r=>r.dc))].map(dc=>{const rows=CORRECTIONS_LOG.filter(r=>r.dc===dc);return dc+": "+rows.length+" stores corrected, "+rows.reduce((a,r)=>a+r.diff,0)+" case delta";}).join('; ');
-
-                        const systemPrompt = `You are a floral sales data analyst for Sprouts Farmers Market. You have access to FY2026 and FY2025 floral sales data.
-
-KEY METRICS (FY2026 YTD FW01-FW12):
-- Total FY26 Sales: $${(DATA26.reduce((a,d)=>a+d[4],0)/1000).toFixed(1)}K
-- Total FY25 Sales (matching weeks): $${(DATA25.reduce((a,d)=>a+d[3],0)/1000).toFixed(1)}K  
-- DCs: ${dcList}
-- Total stores: ${totalStores}
-- Top products: ${prodList}
-
-DISTRICT YOY PERFORMANCE (sorted worst to best):
-${distSummary.slice(0,10).map(d=>`${d.district} (${d.region}): FY26 $${d.s26.toLocaleString()} vs FY25 $${d.s25.toLocaleString()} = ${d.yoyP}% YoY`).join('\n')}
-...and ${distSummary.length-10} more districts
-
-CORRECTIONS APPLIED:
-${correctionsCtx}
-
-Answer questions concisely and specifically. Use store numbers, dollar amounts, and percentages. If asked about a specific store or district, provide exact numbers.`;
-
-                        const resp = await fetch("/api/chat",{
-                          method:"POST",
-                          headers:{
-                            "Content-Type":"application/json",
-                            "anthropic-version":"2023-06-01",
-                            "anthropic-dangerous-direct-browser-access":"true"
-                          },
-                          body:JSON.stringify({
-                            model:"claude-sonnet-4-20250514",
-                            max_tokens:1000,
-                            system:systemPrompt,
-                            messages:[...chatMessages,{role:"user",content:q}]
-                          })
-                        });
-                        const data = await resp.json();
-                        const reply = data.content?.find(c=>c.type==="text")?.text||data.error?.message||"Sorry, I couldn't process that.";
-                        setChatMessages(prev=>[...prev,{role:"assistant",content:reply}]);
-                      }catch(err){
-                        setChatMessages(prev=>[...prev,{role:"assistant",content:"Error: "+err.message}]);
-                      }
-                      setChatLoading(false);
+                      await handleChatSend(chatInput.trim());
                     }
                   }}
                   placeholder="Ask about your data..."
                   style={{flex:1,background:"#0d1b2a",border:"1px solid #1e3a5a",color:"#a0c4dc",fontSize:10,borderRadius:6,padding:"8px 12px",fontFamily:"DM Mono,monospace",outline:"none"}}
                 />
-                <button onClick={async()=>{
-                  if(!chatInput.trim()||chatLoading) return;
-                  const q=chatInput.trim();
-                  setChatInput("");
-                  setChatMessages(prev=>[...prev,{role:"user",content:q}]);
-                  setChatLoading(true);
-                  // trigger same logic — dispatch Enter key event workaround: just duplicate the fetch
-                  try{
-                    const ytd26 = DATA26.reduce((a,d)=>a+d[4],0);
-                    const dcList=[...new Set(DATA26.map(d=>d[1]))].join(', ');
-                    const fw25set=new Set(ALL_FWS_FULL.map(fw=>FW25_MAP[fw]).filter(Boolean));
-                    const distYoYCtx={};
-                    STORE_DATA.forEach(d=>{const m=STORE_META[d[2]];if(!m)return;distYoYCtx[m.district]=distYoYCtx[m.district]||{s26:0,s25:0,region:m.region};distYoYCtx[m.district].s26+=d[3];});
-                    STORE_DATA25.filter(d=>fw25set.has(d[0])).forEach(d=>{const m=STORE_META[d[2]];if(!m)return;if(distYoYCtx[m.district])distYoYCtx[m.district].s25+=d[3];});
-                    const distSummary=Object.entries(distYoYCtx).map(([d,v])=>({district:d,region:v.region,s26:Math.round(v.s26),s25:Math.round(v.s25),yoyP:v.s25>0?((v.s26-v.s25)/v.s25*100).toFixed(1):null})).sort((a,b)=>parseFloat(a.yoyP||0)-parseFloat(b.yoyP||0));
-                    const correctionsCtx=[...new Set(CORRECTIONS_LOG.map(r=>r.dc))].map(dc=>{const rows=CORRECTIONS_LOG.filter(r=>r.dc===dc);return dc+": "+rows.length+" stores, "+rows.reduce((a,r)=>a+r.diff,0)+" case delta";}).join('; ');
-                    const sp=`You are a floral sales analyst for Sprouts Farmers Market. FY2026 YTD Sales: $${(ytd26/1000).toFixed(1)}K. DCs: ${dcList}. Stores: ${Object.keys(STORE_META).length}.\n\nDISTRICT YOY (worst to best):\n${distSummary.map(d=>`${d.district} (${d.region}): $${d.s26.toLocaleString()} vs $${d.s25.toLocaleString()} = ${d.yoyP}%`).join('\n')}\n\nCORRECTIONS: ${correctionsCtx}\n\nAnswer concisely with real numbers.`;
-                    const msgs=[...chatMessages,{role:"user",content:q}];
-                    const resp=await fetch("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,system:sp,messages:msgs})});
-                    const data=await resp.json();
-                    const reply=data.content?.find(c=>c.type==="text")?.text||data.error?.message||"Sorry, couldn't process that.";
-                    setChatMessages(prev=>[...prev,{role:"assistant",content:reply}]);
-                  }catch(err){
-                    setChatMessages(prev=>[...prev,{role:"assistant",content:"Error: "+err.message}]);
-                  }
-                  setChatLoading(false);
-                }} style={{padding:"8px 14px",background:"#3a8fd4",border:"none",borderRadius:6,color:"#fff",cursor:"pointer",fontSize:10,fontFamily:"DM Mono,monospace"}}>↵</button>
+                <button onClick={()=>handleChatSend(chatInput.trim())} style={{padding:"8px 14px",background:"#3a8fd4",border:"none",borderRadius:6,color:"#fff",cursor:"pointer",fontSize:10,fontFamily:"DM Mono,monospace"}}>↵</button>
               </div>
             </div>
           )}
