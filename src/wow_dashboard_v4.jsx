@@ -729,7 +729,7 @@ export default function App() {
     const prods3 = ["PLANT-ORCHID-SMALL","ORCHID-SMALL"];
     const prodsF = ["PLANT-ORCHID-FUSED","ORCHID-FUSED-COLORED"];
     const prodsC = ["PLANT-ORCHID-CASCADE-PREMIUM","ORCHID-CASCADE","ORCHID-WATERFALL-PREMIUM-5IN"];
-    const catProds = {5inch:prods5, 3inch:prods3, fused:prodsF, cascades:prodsC};
+    const catProds = {"5inch":prods5, "3inch":prods3, "fused":prodsF, "cascades":prodsC};
     const last4 = ALL_FWS_FULL.slice(-4);
 
     if(name==="get_store_detail"){
