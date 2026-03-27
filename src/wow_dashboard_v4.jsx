@@ -218,6 +218,13 @@ const ALLOC_CATEGORIES = [
 ];
 
 export default function App() {
+  // ── PASSWORD GATE ─────────────────────────────────────────────────────────
+  const CORRECT_PASSWORD = "Sprouts2026!";
+  const [authenticated, setAuthenticated] = useState(false);
+  const [pwInput, setPwInput] = useState("");
+  const [pwError, setPwError] = useState(false);
+  const [pwShake, setPwShake] = useState(false);
+
   const [tab, setTab] = useState("wow");
   const ALL_FWS_FULL = [202601,202602,202603,202604,202605,202606,202607,202608,202609,202610,202611,202612];
   const computePresetFWs = (preset) => {
@@ -1007,7 +1014,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
   const tabS = active => ({padding:"10px 22px",cursor:"pointer",fontFamily:"'DM Mono',monospace",fontSize:11,letterSpacing:1.2,borderRadius:6,border:"none",background:active?"#3a8fd4":"transparent",color:active?"#fff":"#3a6a8a",transition:"all 0.15s"});
   const tdS = (align,color) => ({padding:"9px 14px",textAlign:align||"left",fontSize:11,color:color||"#c8dff0",fontFamily:"'DM Mono',monospace",borderBottom:"1px solid #0d1b2a"});
 
-  return (
+  const dashboard = (
     <div style={{minHeight:"100vh",background:"#060e1a",color:"#c8dff0",fontFamily:"'DM Mono',monospace",padding:"0 0 60px 0"}}>
       {/* Header */}
       <div style={{background:"linear-gradient(90deg,#07111f 0%,#0a1c33 100%)",borderBottom:"1px solid #1e3a5a",padding:"14px 28px",display:"flex",alignItems:"center",gap:20}}>
@@ -2331,4 +2338,43 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
       )}
     </div>
   );
+
+  // ── PASSWORD GATE WRAPPER ─────────────────────────────────────────────────
+  const handleLogin = () => {
+    if(pwInput === CORRECT_PASSWORD){
+      setAuthenticated(true);
+    } else {
+      setPwError(true);
+      setPwShake(true);
+      setPwInput("");
+      setTimeout(()=>setPwShake(false), 600);
+    }
+  };
+
+  if(!authenticated) return (
+    <div style={{minHeight:"100vh",background:"#04080f",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'DM Mono',monospace"}}>
+      <style>{`@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}`}</style>
+      <div style={{width:380,background:"#060e1a",border:"1px solid #0f2030",borderRadius:16,padding:"40px 36px",boxShadow:"0 20px 60px rgba(0,0,0,0.6)",textAlign:"center",animation:pwShake?"shake 0.5s ease":"none"}}>
+        {LOGO_B64&&<img src={LOGO_B64} alt="Sprouts" style={{height:48,marginBottom:24,objectFit:"contain"}}/>}
+        <div style={{fontSize:13,fontWeight:700,color:"#d8eefa",letterSpacing:2,textTransform:"uppercase",marginBottom:6}}>Floral Sales Dashboard</div>
+        <div style={{fontSize:10,color:"#3a6a8a",marginBottom:32,letterSpacing:1}}>Internal Use Only</div>
+        <input
+          type="password"
+          value={pwInput}
+          onChange={e=>{setPwInput(e.target.value);setPwError(false);}}
+          onKeyDown={e=>e.key==="Enter"&&handleLogin()}
+          placeholder="Enter password"
+          autoFocus
+          style={{width:"100%",boxSizing:"border-box",background:"#0a1628",border:"1px solid "+(pwError?"#f87171":"#1e3a5a"),color:"#c8dff0",fontSize:12,padding:"12px 16px",borderRadius:8,outline:"none",marginBottom:12,fontFamily:"'DM Mono',monospace",letterSpacing:1,textAlign:"center"}}
+        />
+        {pwError&&<div style={{fontSize:10,color:"#f87171",marginBottom:12,letterSpacing:1}}>Incorrect password. Please try again.</div>}
+        <button onClick={handleLogin} style={{width:"100%",padding:"12px",background:"linear-gradient(135deg,#3a8fd4,#1e5a9a)",border:"none",borderRadius:8,color:"#fff",fontSize:11,fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",cursor:"pointer"}}>
+          Access Dashboard
+        </button>
+        <div style={{fontSize:9,color:"#1e3a5a",marginTop:24,letterSpacing:1}}>© Boring Deco · Sprouts Farmers Market</div>
+      </div>
+    </div>
+  );
+
+  return dashboard;
 }
