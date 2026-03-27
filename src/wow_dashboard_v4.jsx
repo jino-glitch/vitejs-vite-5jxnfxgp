@@ -1011,6 +1011,104 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
     return {storeSTList, highPerf, zeroPieces, worstDist, dcSTRanked};
   },[]);
 
+  // Export date — default to next Tuesday from today
+  const getDefaultExportDate = () => {
+    const today = new Date();
+    const day = today.getDay(); // 0=Sun, 1=Mon, 2=Tue
+    const daysToTue = (2 - day + 7) % 7 || 7;
+    const tue = new Date(today); tue.setDate(today.getDate() + daysToTue);
+    return String(tue.getFullYear()) + String(tue.getMonth()+1).padStart(2,'0') + String(tue.getDate()).padStart(2,'0');
+  };
+  const [exportDate, setExportDate] = useState(getDefaultExportDate());
+
+  // SKU map by category
+  const CAT_SKU = {"5inch":"DC62042","3inch":"DC62041","fused":"DC62043","cascades":"DC62047"};
+
+  // Ship date per DC — Tuesday DCs use exportDate, Wednesday DCs use +1 day
+  const getDCShipDate = (dc, baseDate) => {
+    const wedDCs = ["PHOENXAZDC"];
+    if(wedDCs.includes(dc) && baseDate.length===8){
+      const y=parseInt(baseDate.slice(0,4)), m=parseInt(baseDate.slice(4,6))-1, d=parseInt(baseDate.slice(6,8));
+      const wed = new Date(y,m,d+1);
+      return String(wed.getFullYear())+String(wed.getMonth()+1).padStart(2,'0')+String(wed.getDate()).padStart(2,'0');
+    }
+    return baseDate;
+  };
+
+  const exportAllocation = () => {
+    if(typeof window.XLSX !== 'undefined'){
+      runExport(window.XLSX);
+    } else {
+      const existing = document.getElementById('sheetjs-script');
+      if(existing){ existing.addEventListener('load', ()=>runExport(window.XLSX)); return; }
+      const script = document.createElement('script');
+      script.id = 'sheetjs-script';
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+      script.onload = () => runExport(window.XLSX);
+      script.onerror = () => alert('Failed to load Excel library. Check your connection.');
+      document.head.appendChild(script);
+    }
+  };
+
+  const runExport = (XLSX) => {
+    try {
+      const sku = CAT_SKU[allocCategory] || "DC62042";
+      const catLabel = ALLOC_CATEGORIES.find(c=>c.key===allocCategory)?.label || allocCategory;
+      const now = new Date().toLocaleString();
+      const wb = XLSX.utils.book_new();
+
+      // Group current allocData by DC — skip 0 rec cases
+      const dcGroups = {};
+      allocData.forEach(r => {
+        if((r.recCases||0) <= 0) return;
+        const dc = STORE_META[r.store]?.dc || "UNKNOWN";
+        if(!allocDC.includes(dc)) return;
+        if(!dcGroups[dc]) dcGroups[dc] = [];
+        dcGroups[dc].push(r);
+      });
+
+      if(Object.keys(dcGroups).length === 0){
+        alert('No stores with Rec. Cases > 0 found for the current filter.');
+        return;
+      }
+
+      // One sheet per DC
+      Object.entries(dcGroups).forEach(([dc, rows]) => {
+        const shipDate = getDCShipDate(dc, exportDate);
+        const sheetData = [
+          ["SKU","Store","Qty","DC","Ship Date"],
+          [sku, "", "", dc, shipDate],
+          ...rows.map(r => [sku, Number(r.store), r.recCases, dc, shipDate])
+        ];
+        const ws = XLSX.utils.aoa_to_sheet(sheetData);
+        ws['!cols'] = [{wch:12},{wch:10},{wch:8},{wch:12},{wch:12}];
+        const sheetName = dc.substring(0,31);
+        XLSX.utils.book_append_sheet(wb, ws, sheetName);
+      });
+
+      // Corrections Log sheet
+      const corrRows = CORRECTIONS_LOG.filter(r=>allocDC.includes(r.dc));
+      if(corrRows.length > 0){
+        const corrData = [
+          [`Corrections Log — Generated: ${now}`,"","","","","","","",""],
+          ["FW","DC","Store","Store Name","Product","Original Cases","Corrected Cases","Difference","Source"],
+          ...corrRows.map(r=>["FW"+String(r.fw).slice(-2),r.dc,r.store,STORE_META[r.store]?.name||"",r.product,r.orig,r.corrected,r.diff,r.source||"DC Template Wk12"])
+        ];
+        const corrWs = XLSX.utils.aoa_to_sheet(corrData);
+        corrWs['!cols'] = [{wch:6},{wch:12},{wch:8},{wch:28},{wch:22},{wch:14},{wch:14},{wch:10},{wch:16}];
+        corrWs['!merges'] = [{s:{r:0,c:0},e:{r:0,c:8}}];
+        XLSX.utils.book_append_sheet(wb, corrWs, "Corrections Log");
+      }
+
+      const fw = allocFWs.length>0 ? "FW"+String(allocFWs[0]).slice(-2)+"-"+String(allocFWs[allocFWs.length-1]).slice(-2) : "YTD";
+      const filename = `Allocation_${catLabel.replace(/[^a-zA-Z0-9]/g,'')}\_${fw}_${exportDate}.xlsx`;
+      XLSX.writeFile(wb, filename);
+    } catch(err) {
+      alert('Export failed: ' + err.message);
+      console.error('Export error:', err);
+    }
+  };
+
   const tabS = active => ({padding:"10px 22px",cursor:"pointer",fontFamily:"'DM Mono',monospace",fontSize:11,letterSpacing:1.2,borderRadius:6,border:"none",background:active?"#3a8fd4":"transparent",color:active?"#fff":"#3a6a8a",transition:"all 0.15s"});
   const tdS = (align,color) => ({padding:"9px 14px",textAlign:align||"left",fontSize:11,color:color||"#c8dff0",fontFamily:"'DM Mono',monospace",borderBottom:"1px solid #0d1b2a"});
 
@@ -1896,8 +1994,21 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
             <div style={{marginLeft:12,fontSize:10,color:"#2a4a6a"}}>STORE:</div>
             <input value={allocSearch} onChange={e=>setAllocSearch(e.target.value)} placeholder="Search store #..." style={{background:"#0d1b2a",border:"1px solid #1e3a5a",color:"#a0c4dc",fontSize:10,borderRadius:5,padding:"5px 10px",fontFamily:"DM Mono,monospace",width:140,outline:"none"}}/>
             {allocSearch&&<button onClick={()=>setAllocSearch("")} style={{background:"transparent",border:"none",color:"#3a6a8a",cursor:"pointer",fontSize:12,padding:"2px 4px"}}>✕</button>}
-            <div style={{marginLeft:"auto",fontSize:9,color:"#2a4a6a"}}>
-              {(()=>{const catDef=ALLOC_CATEGORIES.find(c=>c.key===allocCategory); return catDef?catDef.cycle.toUpperCase()+" · MAX "+catDef.maxCases+" CASE(S)":""})()}
+            <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:8}}>
+              <div style={{fontSize:9,color:"#2a4a6a"}}>INBOUND DATE:</div>
+              <input
+                type="text"
+                value={exportDate}
+                onChange={e=>setExportDate(e.target.value)}
+                placeholder="YYYYMMDD"
+                style={{background:"#0d1b2a",border:"1px solid #1e3a5a",color:"#a0c4dc",fontSize:10,borderRadius:5,padding:"5px 8px",fontFamily:"DM Mono,monospace",width:90,outline:"none",textAlign:"center"}}
+              />
+              <button
+                onClick={exportAllocation}
+                style={{padding:"6px 14px",background:"linear-gradient(135deg,#4ade80,#22c55e)",border:"none",borderRadius:6,color:"#000",fontSize:10,fontWeight:700,letterSpacing:1,cursor:"pointer",fontFamily:"DM Mono,monospace",display:"flex",alignItems:"center",gap:6}}
+              >
+                ⬇ Download Allocation
+              </button>
             </div>
           </div>
 
