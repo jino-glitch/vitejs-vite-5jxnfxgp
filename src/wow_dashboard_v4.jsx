@@ -1050,10 +1050,11 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
     }
   };
 
-  const runExport = (XLSX) => {
+      const runExport = (XLSX) => {
     try {
       const sku = CAT_SKU[allocCategory] || "DC62042";
       const catLabel = ALLOC_CATEGORIES.find(c=>c.key===allocCategory)?.label || allocCategory;
+      const packSize = {"5inch":10,"3inch":15,"fused":10,"cascades":6}[allocCategory]||10;
       const now = new Date().toLocaleString();
       const wb = XLSX.utils.book_new();
 
@@ -1072,21 +1073,69 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
         return;
       }
 
-      // One sheet per DC
+      const centerStyle = {alignment:{horizontal:"center",vertical:"center"}};
+      const headerStyle = {alignment:{horizontal:"center",vertical:"center"},font:{bold:true}};
+      const titleStyle = {alignment:{horizontal:"center",vertical:"center"},font:{bold:true,sz:13}};
+
+      // ── SUMMARY SHEET (first tab) ──────────────────────────────────────────
+      const fw = allocFWs.length>0 ? "FW"+String(allocFWs[0]).slice(-2)+"-"+String(allocFWs[allocFWs.length-1]).slice(-2) : "YTD";
+      const summaryData = [
+        [`Allocation Summary — ${catLabel} — ${fw} — Generated: ${now}`,"","","","",""],
+        ["","","","","",""],
+        ["DC","Ship Date","Item #","Pack","Total Cases","Stores"],
+      ];
+
+      let grandCases = 0, grandStores = 0;
+      Object.entries(dcGroups).forEach(([dc, rows]) => {
+        const shipDate = getDCShipDate(dc, exportDate);
+        const totalCases = rows.reduce((a,r)=>a+(r.recCases||0),0);
+        summaryData.push([dc, shipDate, sku, packSize, totalCases, rows.length]);
+        grandCases += totalCases;
+        grandStores += rows.length;
+      });
+      summaryData.push(["","","","","",""]);
+      summaryData.push(["TOTAL","","","",grandCases,grandStores]);
+
+      const summaryWs = XLSX.utils.aoa_to_sheet(summaryData);
+      summaryWs['!cols'] = [{wch:14},{wch:12},{wch:12},{wch:8},{wch:14},{wch:10}];
+      summaryWs['!merges'] = [{s:{r:0,c:0},e:{r:0,c:5}}];
+
+      // Style all cells
+      const sr = XLSX.utils.decode_range(summaryWs['!ref']);
+      for(let R=sr.s.r; R<=sr.e.r; R++){
+        for(let C=sr.s.c; C<=sr.e.c; C++){
+          const addr = XLSX.utils.encode_cell({r:R,c:C});
+          if(!summaryWs[addr]) continue;
+          if(R===0) summaryWs[addr].s = titleStyle;
+          else if(R===2) summaryWs[addr].s = headerStyle;
+          else if(R===summaryData.length-1) summaryWs[addr].s = headerStyle; // TOTAL row
+          else summaryWs[addr].s = centerStyle;
+        }
+      }
+      XLSX.utils.book_append_sheet(wb, summaryWs, "Summary");
+
+      // ── DC SHEETS ──────────────────────────────────────────────────────────
       Object.entries(dcGroups).forEach(([dc, rows]) => {
         const shipDate = getDCShipDate(dc, exportDate);
         const sheetData = [
           ["SKU","Store","Qty","DC","Ship Date"],
-          [sku, "", "", dc, shipDate],
           ...rows.map(r => [sku, Number(r.store), r.recCases, dc, shipDate])
         ];
         const ws = XLSX.utils.aoa_to_sheet(sheetData);
-        ws['!cols'] = [{wch:12},{wch:10},{wch:8},{wch:12},{wch:12}];
-        const sheetName = dc.substring(0,31);
-        XLSX.utils.book_append_sheet(wb, ws, sheetName);
+        ws['!cols'] = [{wch:12},{wch:10},{wch:8},{wch:14},{wch:12}];
+
+        const range = XLSX.utils.decode_range(ws['!ref']);
+        for(let R=range.s.r; R<=range.e.r; R++){
+          for(let C=range.s.c; C<=range.e.c; C++){
+            const addr = XLSX.utils.encode_cell({r:R,c:C});
+            if(!ws[addr]) continue;
+            ws[addr].s = R===0 ? headerStyle : centerStyle;
+          }
+        }
+        XLSX.utils.book_append_sheet(wb, ws, dc.substring(0,31));
       });
 
-      // Corrections Log sheet
+      // ── CORRECTIONS LOG ───────────────────────────────────────────────────
       const corrRows = CORRECTIONS_LOG.filter(r=>allocDC.includes(r.dc));
       if(corrRows.length > 0){
         const corrData = [
@@ -1097,12 +1146,18 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
         const corrWs = XLSX.utils.aoa_to_sheet(corrData);
         corrWs['!cols'] = [{wch:6},{wch:12},{wch:8},{wch:28},{wch:22},{wch:14},{wch:14},{wch:10},{wch:16}];
         corrWs['!merges'] = [{s:{r:0,c:0},e:{r:0,c:8}}];
+        const cr = XLSX.utils.decode_range(corrWs['!ref']);
+        for(let R=cr.s.r; R<=cr.e.r; R++){
+          for(let C=cr.s.c; C<=cr.e.c; C++){
+            const addr = XLSX.utils.encode_cell({r:R,c:C});
+            if(corrWs[addr]) corrWs[addr].s = R<=1 ? headerStyle : centerStyle;
+          }
+        }
         XLSX.utils.book_append_sheet(wb, corrWs, "Corrections Log");
       }
 
-      const fw = allocFWs.length>0 ? "FW"+String(allocFWs[0]).slice(-2)+"-"+String(allocFWs[allocFWs.length-1]).slice(-2) : "YTD";
-      const filename = `Allocation_${catLabel.replace(/[^a-zA-Z0-9]/g,'')}\_${fw}_${exportDate}.xlsx`;
-      XLSX.writeFile(wb, filename);
+      const filename = `Allocation_${catLabel.replace(/[^a-zA-Z0-9]/g,'')}_${fw}_${exportDate}.xlsx`;
+      XLSX.writeFile(wb, filename, {cellStyles:true});
     } catch(err) {
       alert('Export failed: ' + err.message);
       console.error('Export error:', err);
