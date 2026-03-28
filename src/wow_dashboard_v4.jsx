@@ -2379,27 +2379,27 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
       </div>
 
       {/* Floating Insights Button */}
-      <button onClick={()=>setInsightsOpen(o=>!o)} style={{position:"fixed",bottom:28,right:28,zIndex:1000,background:"linear-gradient(135deg,#3a8fd4,#7c3aed)",border:"none",borderRadius:50,width:56,height:56,cursor:"pointer",boxShadow:"0 4px 20px rgba(124,58,237,0.5)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,transition:"all 0.2s"}}>
+      <button onClick={()=>setInsightsOpen(o=>!o)} style={{position:"fixed",bottom:isMobile?16:28,right:isMobile?16:28,zIndex:1000,background:"linear-gradient(135deg,#3a8fd4,#7c3aed)",border:"none",borderRadius:50,width:isMobile?48:56,height:isMobile?48:56,cursor:"pointer",boxShadow:"0 4px 20px rgba(124,58,237,0.5)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:isMobile?18:22,transition:"all 0.2s"}}>
         {insightsOpen?"✕":"💡"}
       </button>
 
       {/* Floating Insights Panel */}
       {insightsOpen&&(
-        <div style={{position:"fixed",bottom:96,right:28,zIndex:999,width:520,maxHeight:"75vh",background:"#080f1d",border:"1px solid #1e3a5a",borderRadius:14,boxShadow:"0 8px 40px rgba(0,0,0,0.6)",display:"flex",flexDirection:"column",overflow:"hidden"}}>
+        <div style={{position:"fixed",bottom:isMobile?0:96,right:isMobile?0:28,zIndex:999,width:isMobile?"100%":520,height:isMobile?"90vh":undefined,maxHeight:isMobile?"90vh":"75vh",background:"#080f1d",border:"1px solid #1e3a5a",borderRadius:isMobile?"14px 14px 0 0":14,boxShadow:"0 8px 40px rgba(0,0,0,0.6)",display:"flex",flexDirection:"column",overflow:"hidden"}}>
           {/* Panel Header */}
-          <div style={{padding:"14px 18px",background:"linear-gradient(90deg,#07111f,#0a1c33)",borderBottom:"1px solid #1e3a5a",display:"flex",alignItems:"center",gap:10}}>
+          <div style={{padding:isMobile?"12px 16px":"14px 18px",background:"linear-gradient(90deg,#07111f,#0a1c33)",borderBottom:"1px solid #1e3a5a",display:"flex",alignItems:"center",gap:10,flexShrink:0}}>
             <span style={{fontSize:14}}>💡</span>
             <span style={{fontSize:11,fontWeight:700,color:"#d8eefa",fontFamily:"DM Mono,monospace",letterSpacing:1.2}}>INSIGHTS</span>
             <div style={{marginLeft:"auto",display:"flex",gap:6}}>
               {[["cards","Quick Insights"],["chat","Ask AI"]].map(([k,l])=>(
-                <button key={k} onClick={()=>setInsightsTab(k)} style={{padding:"4px 12px",background:insightsTab===k?"#3a8fd4":"transparent",border:"1px solid "+(insightsTab===k?"#3a8fd4":"#1e3a5a"),color:insightsTab===k?"#fff":"#3a6a8a",borderRadius:5,cursor:"pointer",fontSize:9,fontFamily:"DM Mono,monospace",letterSpacing:1}}>{l}</button>
+                <button key={k} onClick={()=>setInsightsTab(k)} style={{padding:isMobile?"5px 14px":"4px 12px",background:insightsTab===k?"#3a8fd4":"transparent",border:"1px solid "+(insightsTab===k?"#3a8fd4":"#1e3a5a"),color:insightsTab===k?"#fff":"#3a6a8a",borderRadius:5,cursor:"pointer",fontSize:isMobile?10:9,fontFamily:"DM Mono,monospace",letterSpacing:1}}>{l}</button>
               ))}
             </div>
           </div>
 
           {/* Quick Insights Cards */}
           {insightsTab==="cards"&&(
-            <div style={{overflowY:"auto",padding:16,display:"flex",flexDirection:"column",gap:12}}>
+            <div style={{overflowY:"auto",padding:isMobile?12:16,display:"flex",flexDirection:"column",gap:12,flex:1,WebkitOverflowScrolling:"touch"}}>
               {(()=>{
                 const {storeSTList,highPerf,zeroPieces,worstDist,dcSTRanked} = insightsData;
                 const Card = ({icon,title,children})=>(
@@ -2488,18 +2488,18 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
           {/* AI Chat */}
           {insightsTab==="chat"&&(
             <div style={{display:"flex",flexDirection:"column",flex:1,overflow:"hidden"}}>
-              <div style={{flex:1,overflowY:"auto",padding:16,display:"flex",flexDirection:"column",gap:10,minHeight:200,maxHeight:"calc(75vh - 140px)"}}>
+              <div style={{flex:1,overflowY:"auto",padding:isMobile?12:16,display:"flex",flexDirection:"column",gap:10,WebkitOverflowScrolling:"touch"}}>
                 {chatMessages.length===0&&(
-                  <div style={{color:"#3a6a8a",fontSize:10,fontFamily:"DM Mono,monospace",lineHeight:1.8}}>
+                  <div style={{color:"#3a6a8a",fontSize:isMobile?11:10,fontFamily:"DM Mono,monospace",lineHeight:1.8}}>
                     <div style={{marginBottom:8,color:"#5a8aaa"}}>Ask me anything about the dashboard data. Examples:</div>
                     {["Which stores in FULRTNCADC should get +2 cases?","What happened to 5\" Fused sales in FW07?","Which district had the best YoY performance?","Compare Central vs SoCal YTD","Which stores have 0 pieces received this month?"].map(q=>(
-                      <div key={q} onClick={()=>setChatInput(q)} style={{cursor:"pointer",padding:"4px 8px",borderRadius:4,border:"1px solid #0f1e30",marginBottom:4,color:"#3a8fd4"}}>{q}</div>
+                      <div key={q} onClick={()=>setChatInput(q)} style={{cursor:"pointer",padding:isMobile?"8px 10px":"4px 8px",borderRadius:4,border:"1px solid #0f1e30",marginBottom:6,color:"#3a8fd4",fontSize:isMobile?11:10,lineHeight:1.5}}>{q}</div>
                     ))}
                   </div>
                 )}
                 {chatMessages.map((m,i)=>(
                   <div key={i} style={{display:"flex",justifyContent:m.role==="user"?"flex-end":"flex-start"}}>
-                    <div style={{maxWidth:"85%",padding:"8px 12px",borderRadius:8,background:m.role==="user"?"#1e3a5a":"#0a1628",border:"1px solid "+(m.role==="user"?"#3a8fd4":"#0f1e30"),fontSize:11,color:"#c8dff0",fontFamily:"DM Mono,monospace",lineHeight:1.6,whiteSpace:"pre-wrap"}}>{m.content}</div>
+                    <div style={{maxWidth:"85%",padding:isMobile?"10px 14px":"8px 12px",borderRadius:8,background:m.role==="user"?"#1e3a5a":"#0a1628",border:"1px solid "+(m.role==="user"?"#3a8fd4":"#0f1e30"),fontSize:isMobile?12:11,color:"#c8dff0",fontFamily:"DM Mono,monospace",lineHeight:1.6,whiteSpace:"pre-wrap"}}>{m.content}</div>
                   </div>
                 ))}
                 {chatLoading&&(
@@ -2508,7 +2508,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                   </div>
                 )}
               </div>
-              <div style={{padding:"12px 16px",borderTop:"1px solid #0f1e30",display:"flex",gap:8}}>
+              <div style={{padding:isMobile?"12px 16px 24px":"12px 16px",borderTop:"1px solid #0f1e30",display:"flex",gap:8,flexShrink:0}}>
                 <input
                   value={chatInput}
                   onChange={e=>setChatInput(e.target.value)}
@@ -2519,9 +2519,9 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                     }
                   }}
                   placeholder="Ask about your data..."
-                  style={{flex:1,background:"#0d1b2a",border:"1px solid #1e3a5a",color:"#a0c4dc",fontSize:10,borderRadius:6,padding:"8px 12px",fontFamily:"DM Mono,monospace",outline:"none"}}
+                  style={{flex:1,background:"#0d1b2a",border:"1px solid #1e3a5a",color:"#a0c4dc",fontSize:isMobile?13:10,borderRadius:6,padding:isMobile?"12px 14px":"8px 12px",fontFamily:"DM Mono,monospace",outline:"none"}}
                 />
-                <button onClick={()=>handleChatSend(chatInput.trim())} style={{padding:"8px 14px",background:"#3a8fd4",border:"none",borderRadius:6,color:"#fff",cursor:"pointer",fontSize:10,fontFamily:"DM Mono,monospace"}}>↵</button>
+                <button onClick={()=>handleChatSend(chatInput.trim())} style={{padding:isMobile?"12px 20px":"8px 14px",background:"#3a8fd4",border:"none",borderRadius:6,color:"#fff",cursor:"pointer",fontSize:isMobile?16:10,fontFamily:"DM Mono,monospace",flexShrink:0}}>↵</button>
               </div>
             </div>
           )}
