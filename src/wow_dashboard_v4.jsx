@@ -2379,8 +2379,8 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
       </div>
 
       {/* Floating Insights Button */}
-      <button onClick={()=>setInsightsOpen(o=>!o)} style={{position:"fixed",bottom:isMobile?16:28,right:isMobile?16:28,zIndex:1000,background:"linear-gradient(135deg,#3a8fd4,#7c3aed)",border:"none",borderRadius:50,width:isMobile?48:56,height:isMobile?48:56,cursor:"pointer",boxShadow:"0 4px 20px rgba(124,58,237,0.5)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:isMobile?18:22,transition:"all 0.2s"}}>
-        {insightsOpen&&!isMobile?"✕":"💡"}
+      <button onClick={()=>setInsightsOpen(o=>!o)} style={{position:"fixed",bottom:isMobile?16:28,right:isMobile?16:28,zIndex:1000,background:"linear-gradient(135deg,#3a8fd4,#7c3aed)",border:"none",borderRadius:50,width:isMobile?48:56,height:isMobile?48:56,cursor:"pointer",boxShadow:"0 4px 20px rgba(124,58,237,0.5)",display:isMobile&&insightsOpen?"none":"flex",alignItems:"center",justifyContent:"center",fontSize:isMobile?18:22,transition:"all 0.2s"}}>
+        {insightsOpen?"✕":"💡"}
       </button>
 
       {/* Floating Insights Panel */}
