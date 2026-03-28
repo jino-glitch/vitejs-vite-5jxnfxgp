@@ -1161,26 +1161,27 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
     }
   };
 
-  const tabS = active => ({padding:"10px 22px",cursor:"pointer",fontFamily:"'DM Mono',monospace",fontSize:11,letterSpacing:1.2,borderRadius:6,border:"none",background:active?"#3a8fd4":"transparent",color:active?"#fff":"#3a6a8a",transition:"all 0.15s"});
+  const isMobile = typeof window!=="undefined"&&window.innerWidth<640;
+  const tabS = active => ({padding:isMobile?"6px 8px":"10px 22px",cursor:"pointer",fontFamily:"'DM Mono',monospace",fontSize:isMobile?9:11,letterSpacing:isMobile?0.3:1.2,borderRadius:6,border:"none",background:active?"#3a8fd4":"transparent",color:active?"#fff":"#3a6a8a",transition:"all 0.15s",whiteSpace:"nowrap",flexShrink:0});
   const tdS = (align,color) => ({padding:"9px 14px",textAlign:align||"left",fontSize:11,color:color||"#c8dff0",fontFamily:"'DM Mono',monospace",borderBottom:"1px solid #0d1b2a"});
 
   const dashboard = (
     <div style={{minHeight:"100vh",background:"#060e1a",color:"#c8dff0",fontFamily:"'DM Mono',monospace",padding:"0 0 60px 0"}}>
       {/* Header */}
-      <div style={{background:"linear-gradient(90deg,#07111f 0%,#0a1c33 100%)",borderBottom:"1px solid #1e3a5a",padding:"14px 28px",display:"flex",alignItems:"center",gap:20}}>
-        <img src={LOGO_B64} alt="Sprouts" style={{height:44,objectFit:"contain"}}/>
-        <div>
-          <div style={{fontSize:16,fontWeight:700,color:"#d8eefa",letterSpacing:1,fontFamily:"'DM Mono',monospace"}}>FLORAL SALES DASHBOARD</div>
-          <div style={{fontSize:9,color:"#3a6a8a",letterSpacing:2,marginTop:2}}>FY2026 vs FY2025 · RETAIL WHOLESALE</div>
+      <div style={{background:"linear-gradient(90deg,#07111f 0%,#0a1c33 100%)",borderBottom:"1px solid #1e3a5a",padding:isMobile?"10px 16px":"14px 28px",display:"flex",alignItems:"center",gap:isMobile?10:20}}>
+        <img src={LOGO_B64} alt="Sprouts" style={{height:isMobile?32:44,objectFit:"contain",flexShrink:0}}/>
+        <div style={{minWidth:0}}>
+          <div style={{fontSize:isMobile?12:16,fontWeight:700,color:"#d8eefa",letterSpacing:1,fontFamily:"'DM Mono',monospace"}}>FLORAL SALES DASHBOARD</div>
+          <div style={{fontSize:9,color:"#3a6a8a",letterSpacing:isMobile?1:2,marginTop:2}}>FY2026 vs FY2025 · RETAIL WHOLESALE</div>
         </div>
-        <div style={{marginLeft:"auto",fontSize:9,color:"#2a4a6a",textAlign:"right"}}>
+        {!isMobile&&<div style={{marginLeft:"auto",fontSize:9,color:"#2a4a6a",textAlign:"right"}}>
           <div>DATA THRU {FW_LABEL(ALL_FWS[ALL_FWS.length-1])}</div>
           <div style={{marginTop:2}}>{new Date().toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})}</div>
-        </div>
+        </div>}
       </div>
 
       {/* Date Presets */}
-      <div style={{background:"#06101e",borderBottom:"1px solid #0f1e30",padding:"10px 28px",display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
+      <div style={{background:"#06101e",borderBottom:"1px solid #0f1e30",padding:"10px 28px",display:tab==="alloc"?"none":"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
         <span style={{fontSize:9,color:"#2a4a6a",fontFamily:"DM Mono,monospace",letterSpacing:1.2,marginRight:4}}>DATE RANGE:</span>
         {[["last4","Last 4 Wks"],["last8","Last 8 Wks"],["ytd","Full YTD"],["custom","Custom"]].map(([key,lbl])=>(
           <button key={key} onClick={()=>applyPreset(key)} style={{padding:"5px 14px",background:datePreset===key?"#3a8fd4":"#0d1b2a",border:"1px solid "+(datePreset===key?"#3a8fd4":"#1e3a5a"),color:datePreset===key?"#fff":"#5a8aaa",borderRadius:6,cursor:"pointer",fontSize:10,fontFamily:"DM Mono,monospace",transition:"all 0.15s"}}>{lbl}</button>
@@ -1203,7 +1204,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
       </div>
 
       {/* Filters */}
-      <div style={{background:"#080f1d",borderBottom:"1px solid #0f1e30",padding:"12px 28px",display:"flex",gap:10,flexWrap:"wrap",alignItems:"center"}}>
+      <div style={{background:"#080f1d",borderBottom:"1px solid #0f1e30",padding:"12px 28px",display:tab==="alloc"?"none":"flex",gap:10,flexWrap:"wrap",alignItems:"center"}}>
         <MultiSelect label="DC" options={ALL_DCS} selected={selDC} onChange={setSelDC}/>
         <MultiSelect label="Product" options={ALL_PRODUCTS} selected={selProd} onChange={setSelProd}/>
         <MultiSelect label="Vendor" options={ALL_VENDORS} selected={selVendor} onChange={setSelVendor}/>
@@ -1220,7 +1221,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
       </div>
 
       {/* Tabs */}
-      <div style={{padding:"16px 28px 0",display:"flex",gap:8,borderBottom:"1px solid #0f1e30",background:"#060e1a"}}>
+      <div style={{padding:isMobile?"8px 12px 0":"16px 28px 0",display:"flex",gap:isMobile?4:8,borderBottom:"1px solid #0f1e30",background:"#060e1a",overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none"}}>
         <button style={tabS(tab==="wow")} onClick={()=>setTab("wow")}>WoW</button>
         <button style={tabS(tab==="yoy")} onClick={()=>setTab("yoy")}>YoY</button>
         <button style={tabS(tab==="ytd")} onClick={()=>setTab("ytd")}>YTD Summary</button>
@@ -1230,7 +1231,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
         <button style={{...tabS(tab==="alloc"),background:tab==="alloc"?"#7c3aed":"transparent",border:tab==="alloc"?"1px solid #7c3aed":"1px solid transparent"}} onClick={()=>setTab("alloc")}>Allocations</button>
       </div>
 
-      <div style={{padding:"24px 28px"}}>
+      <div style={{padding:isMobile?"12px 12px":"24px 28px"}}>
       {tab==="wow"&&(
         <div>
           <div style={{fontSize:10,color:"#2a4a6a",marginBottom:16}}>
@@ -2018,55 +2019,61 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
 
       {tab==="alloc"&&(
         <div>
-          {/* Alloc controls */}
-          <div style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap",marginBottom:20}}>
-            <div style={{fontSize:10,color:"#2a4a6a"}}>BASELINE:</div>
+          {/* Alloc controls — Row 1: Baseline */}
+          <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap",marginBottom:isMobile?8:10}}>
+            <div style={{fontSize:9,color:"#2a4a6a",letterSpacing:1,minWidth:isMobile?0:60}}>BASELINE:</div>
             {[["last4","Last 4 Wks"],["last8","Last 8 Wks"],["ytd","Full YTD"],["custom","Custom"]].map(([k,l])=>(
-              <button key={k} onClick={()=>setAllocBaseline(k)} style={{padding:"5px 14px",background:allocBaseline===k?"#7c3aed":"#0d1b2a",border:"1px solid "+(allocBaseline===k?"#7c3aed":"#1e3a5a"),color:allocBaseline===k?"#fff":"#5a8aaa",borderRadius:6,cursor:"pointer",fontSize:10,fontFamily:"DM Mono,monospace"}}>{l}</button>
+              <button key={k} onClick={()=>setAllocBaseline(k)} style={{padding:isMobile?"4px 10px":"5px 14px",background:allocBaseline===k?"#7c3aed":"#0d1b2a",border:"1px solid "+(allocBaseline===k?"#7c3aed":"#1e3a5a"),color:allocBaseline===k?"#fff":"#5a8aaa",borderRadius:6,cursor:"pointer",fontSize:isMobile?9:10,fontFamily:"DM Mono,monospace",whiteSpace:"nowrap"}}>{l}</button>
             ))}
             {allocBaseline==="custom"&&(
               <>
-                <div style={{fontSize:10,color:"#2a4a6a",marginLeft:4}}>FROM:</div>
-                <select value={allocCustomFrom} onChange={e=>setAllocCustomFrom(Number(e.target.value))} style={{background:"#0d1b2a",border:"1px solid #7c3aed",color:"#a0c4dc",fontSize:10,borderRadius:5,padding:"5px 10px",fontFamily:"DM Mono,monospace"}}>
+                <div style={{fontSize:9,color:"#2a4a6a"}}>FROM:</div>
+                <select value={allocCustomFrom} onChange={e=>setAllocCustomFrom(Number(e.target.value))} style={{background:"#0d1b2a",border:"1px solid #7c3aed",color:"#a0c4dc",fontSize:9,borderRadius:5,padding:"4px 8px",fontFamily:"DM Mono,monospace"}}>
                   {ALL_FWS_FULL.map(fw=><option key={fw} value={fw}>{"FW"+String(fw).slice(-2)}</option>)}
                 </select>
-                <div style={{fontSize:10,color:"#2a4a6a"}}>TO:</div>
-                <select value={allocCustomTo} onChange={e=>setAllocCustomTo(Number(e.target.value))} style={{background:"#0d1b2a",border:"1px solid #7c3aed",color:"#a0c4dc",fontSize:10,borderRadius:5,padding:"5px 10px",fontFamily:"DM Mono,monospace"}}>
+                <div style={{fontSize:9,color:"#2a4a6a"}}>TO:</div>
+                <select value={allocCustomTo} onChange={e=>setAllocCustomTo(Number(e.target.value))} style={{background:"#0d1b2a",border:"1px solid #7c3aed",color:"#a0c4dc",fontSize:9,borderRadius:5,padding:"4px 8px",fontFamily:"DM Mono,monospace"}}>
                   {ALL_FWS_FULL.filter(fw=>fw>=allocCustomFrom).map(fw=><option key={fw} value={fw}>{"FW"+String(fw).slice(-2)}</option>)}
                 </select>
                 <div style={{fontSize:9,color:"#7c3aed",fontFamily:"DM Mono,monospace"}}>{allocFWs.length+" wks"}</div>
               </>
             )}
-            <div style={{marginLeft:12,fontSize:10,color:"#2a4a6a"}}>CATEGORY:</div>
+          </div>
+
+          {/* Alloc controls — Row 2: Category, DC, Store */}
+          <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap",marginBottom:isMobile?8:10}}>
+            <div style={{fontSize:9,color:"#2a4a6a",letterSpacing:1}}>CATEGORY:</div>
             <MultiSelect label="Cat" options={ALLOC_CATEGORIES.map(c=>c.key)} selected={allocCategory} onChange={setAllocCategory} fmtOpt={k=>{const c=ALLOC_CATEGORIES.find(x=>x.key===k);return c?c.label:k;}} />
-            <div style={{marginLeft:12,fontSize:10,color:"#2a4a6a"}}>DC:</div>
+            <div style={{fontSize:9,color:"#2a4a6a",letterSpacing:1,marginLeft:isMobile?0:8}}>DC:</div>
             <MultiSelect label="DC" options={ALL_DCS} selected={allocDC} onChange={setAllocDC}/>
-            <div style={{marginLeft:12,fontSize:10,color:"#2a4a6a"}}>STORE:</div>
-            <input value={allocSearch} onChange={e=>setAllocSearch(e.target.value)} placeholder="Search store #..." style={{background:"#0d1b2a",border:"1px solid #1e3a5a",color:"#a0c4dc",fontSize:10,borderRadius:5,padding:"5px 10px",fontFamily:"DM Mono,monospace",width:140,outline:"none"}}/>
+            <div style={{fontSize:9,color:"#2a4a6a",letterSpacing:1,marginLeft:isMobile?0:8}}>STORE:</div>
+            <input value={allocSearch} onChange={e=>setAllocSearch(e.target.value)} placeholder="Search store #..." style={{background:"#0d1b2a",border:"1px solid #1e3a5a",color:"#a0c4dc",fontSize:9,borderRadius:5,padding:"4px 8px",fontFamily:"DM Mono,monospace",width:isMobile?110:140,outline:"none"}}/>
             {allocSearch&&<button onClick={()=>setAllocSearch("")} style={{background:"transparent",border:"none",color:"#3a6a8a",cursor:"pointer",fontSize:12,padding:"2px 4px"}}>✕</button>}
-            <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:8}}>
-              <div style={{fontSize:9,color:"#2a4a6a"}}>INBOUND DATE:</div>
-              <input
-                type="text"
-                value={exportDate}
-                onChange={e=>setExportDate(e.target.value)}
-                placeholder="YYYYMMDD"
-                style={{background:"#0d1b2a",border:"1px solid #1e3a5a",color:"#a0c4dc",fontSize:10,borderRadius:5,padding:"5px 8px",fontFamily:"DM Mono,monospace",width:90,outline:"none",textAlign:"center"}}
-              />
-              <button
-                onClick={exportAllocation}
-                style={{padding:"6px 14px",background:"linear-gradient(135deg,#4ade80,#22c55e)",border:"none",borderRadius:6,color:"#000",fontSize:10,fontWeight:700,letterSpacing:1,cursor:"pointer",fontFamily:"DM Mono,monospace",display:"flex",alignItems:"center",gap:6}}
-              >
-                ⬇ Download Allocation
-              </button>
-            </div>
+          </div>
+
+          {/* Alloc controls — Row 3: Inbound date + Download */}
+          <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap",marginBottom:isMobile?12:20}}>
+            <div style={{fontSize:9,color:"#2a4a6a",letterSpacing:1}}>INBOUND DATE:</div>
+            <input
+              type="text"
+              value={exportDate}
+              onChange={e=>setExportDate(e.target.value)}
+              placeholder="YYYYMMDD"
+              style={{background:"#0d1b2a",border:"1px solid #1e3a5a",color:"#a0c4dc",fontSize:9,borderRadius:5,padding:"4px 8px",fontFamily:"DM Mono,monospace",width:90,outline:"none",textAlign:"center"}}
+            />
+            <button
+              onClick={exportAllocation}
+              style={{padding:isMobile?"5px 10px":"6px 14px",background:"linear-gradient(135deg,#4ade80,#22c55e)",border:"none",borderRadius:6,color:"#000",fontSize:isMobile?9:10,fontWeight:700,letterSpacing:1,cursor:"pointer",fontFamily:"DM Mono,monospace",display:"flex",alignItems:"center",gap:6,whiteSpace:"nowrap"}}
+            >
+              ⬇ Download Allocation
+            </button>
           </div>
 
           {/* Legend */}
-          <div style={{display:"flex",gap:16,marginBottom:16,flexWrap:"wrap"}}>
-            {[["🚩","#6b7280","Insufficient Data"],["🔴","#f87171","Skip (0 cases)"],["🟢","#4ade80","Standard (+1)"],["🟡","#f5a623","Watch (+1, approaching high)"],["🔵","#60d9fa","High Performer (+2)"]].map(([icon,color,label])=>(
-              <div key={label} style={{display:"flex",alignItems:"center",gap:5}}>
-                <span style={{fontSize:11}}>{icon}</span>
+          <div style={{display:"flex",gap:isMobile?8:16,marginBottom:16,flexWrap:"wrap"}}>
+            {[["🚩","#6b7280","Insufficient Data"],["🔴","#f87171","Skip (0 cases)"],["🟢","#4ade80","Standard (+1)"],["🟡","#f5a623",isMobile?"Watch (+1)":"Watch (+1, approaching high)"],["🔵","#60d9fa","High Performer (+2)"]].map(([icon,color,label])=>(
+              <div key={label} style={{display:"flex",alignItems:"center",gap:4}}>
+                <span style={{fontSize:10}}>{icon}</span>
                 <span style={{fontSize:9,color,fontFamily:"DM Mono,monospace"}}>{label}</span>
               </div>
             ))}
@@ -2100,12 +2107,12 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                 </div>
               );
             })()}
-            <div style={{overflowX:"auto",maxHeight:580,overflowY:"auto"}}>
-            <table style={{width:"100%",borderCollapse:"collapse"}}>
+            <div style={{overflowX:"auto",maxHeight:isMobile?480:580,overflowY:"auto",WebkitOverflowScrolling:"touch"}}>
+            <table style={{width:"100%",borderCollapse:"collapse",minWidth:isMobile?520:800}}>
               <thead>
                 <tr style={{background:"#0a1628"}}>
-                  {["Store","DC",...(allocCategory.length>1?["Category"]:[]),"Avg Wkly Sales","Pieces Sold","Pieces Rcvd","Store ST%","Consec. High Wks","Current Cases","Rec. Cases","Status"].map(h=>(
-                    <th key={h} style={{padding:"10px 14px",textAlign:h==="Store"||h==="DC"||h==="Status"?"left":"right",fontSize:9,color:"#3a6a8a",fontFamily:"DM Mono,monospace",letterSpacing:1.2,textTransform:"uppercase",borderBottom:"1px solid #1e3a5a",whiteSpace:"nowrap"}}>{h}</th>
+                  {["Store","DC",...(allocCategory.length>1?["Category"]:[]),"Avg Wkly Sales",...(isMobile?[]:["Pieces Sold","Pieces Rcvd"]),"Store ST%",...(isMobile?[]:["Consec. High Wks","Current Cases"]),"Rec. Cases","Status"].map(h=>(
+                    <th key={h} style={{padding:isMobile?"8px 8px":"10px 14px",textAlign:h==="Store"||h==="DC"||h==="Status"?"left":"right",fontSize:9,color:"#3a6a8a",fontFamily:"DM Mono,monospace",letterSpacing:0.8,textTransform:"uppercase",borderBottom:"1px solid #1e3a5a",whiteSpace:"nowrap"}}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -2131,48 +2138,50 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                       const statusLabel = isInsuff?"Insufficient Data":r.status==="skip"?"Skip":r.status==="high"?"High Performer":r.status==="watch"?"Watch":"Standard";
                       const statusColor = isInsuff?"#6b7280":r.status==="skip"?"#f87171":r.status==="high"?"#60d9fa":r.status==="watch"?"#f5a623":"#4ade80";
                       const bg = rowIdx%2===0?"#060e1a":"#080f1d";
+                      const cellP = isMobile?"6px 8px":"9px 14px";
                       rowIdx++;
                       rows.push(
                         <tr key={dc+"-"+r.store+"-"+(r.catKey||"")} style={{background:bg}}>
-                          <td style={{padding:"9px 14px",fontSize:11,color:"#c8dff0",fontFamily:"DM Mono,monospace",borderBottom:"1px solid #0d1b2a"}}>
+                          <td style={{padding:cellP,fontSize:isMobile?10:11,color:"#c8dff0",fontFamily:"DM Mono,monospace",borderBottom:"1px solid #0d1b2a"}}>
                             <div style={{fontWeight:600}}>{"#"+r.store}</div>
-                            <div style={{fontSize:9,color:"#3a5a7a",marginTop:2}}>{STORE_META[r.store]?.name||""}</div>
+                            <div style={{fontSize:8,color:"#3a5a7a",marginTop:2}}>{STORE_META[r.store]?.name||""}</div>
                           </td>
-                          <td style={{padding:"9px 14px",fontSize:10,color:"#5a8aaa",fontFamily:"DM Mono,monospace",borderBottom:"1px solid #0d1b2a"}}>{dc}</td>
-                          {allocCategory.length>1&&<td style={{padding:"9px 14px",fontSize:10,color:"#a78bfa",fontFamily:"DM Mono,monospace",borderBottom:"1px solid #0d1b2a"}}>{r.catLabel||r.catKey||""}</td>}
-                          <td style={{padding:"9px 14px",textAlign:"right",fontSize:11,color:"#c8dff0",fontFamily:"DM Mono,monospace",borderBottom:"1px solid #0d1b2a"}}>{isInsuff?"—":"$"+r.avgSales.toLocaleString("en-US",{minimumFractionDigits:0,maximumFractionDigits:0})}</td>
-                          <td style={{padding:"9px 14px",textAlign:"right",borderBottom:"1px solid #0d1b2a"}}>
+                          <td style={{padding:cellP,fontSize:isMobile?9:10,color:"#5a8aaa",fontFamily:"DM Mono,monospace",borderBottom:"1px solid #0d1b2a",whiteSpace:"nowrap"}}>{isMobile?dc.replace("DC","").replace("TXDC","TX").replace("CADC","CA").replace("CODC","CO").replace("FLDC","FL").replace("AZDC","AZ"):dc}</td>
+                          {allocCategory.length>1&&<td style={{padding:cellP,fontSize:isMobile?9:10,color:"#a78bfa",fontFamily:"DM Mono,monospace",borderBottom:"1px solid #0d1b2a"}}>{r.catLabel||r.catKey||""}</td>}
+                          <td style={{padding:cellP,textAlign:"right",fontSize:isMobile?10:11,color:"#c8dff0",fontFamily:"DM Mono,monospace",borderBottom:"1px solid #0d1b2a"}}>{isInsuff?"—":"$"+r.avgSales.toLocaleString("en-US",{minimumFractionDigits:0,maximumFractionDigits:0})}</td>
+                          {!isMobile&&<td style={{padding:cellP,textAlign:"right",borderBottom:"1px solid #0d1b2a"}}>
                             <div style={{fontSize:11,color:"#c8dff0",fontFamily:"DM Mono,monospace",fontWeight:600}}>{isInsuff?"—":r.piecesSold>0?r.piecesSold.toLocaleString():"—"}</div>
                             <div style={{fontSize:8,color:"#2a4a6a",fontFamily:"DM Mono,monospace",marginTop:1}}>est.</div>
-                          </td>
-                          <td style={{padding:"9px 14px",textAlign:"right",borderBottom:"1px solid #0d1b2a"}}>
+                          </td>}
+                          {!isMobile&&<td style={{padding:cellP,textAlign:"right",borderBottom:"1px solid #0d1b2a"}}>
                             {isInsuff ? <span style={{color:"#3a5a7a",fontFamily:"DM Mono,monospace",fontSize:11}}>—</span> : (
                               <div>
                                 <div style={{fontSize:11,color:"#c8dff0",fontFamily:"DM Mono,monospace",fontWeight:600}}>{r.piecesReceived>0?r.piecesReceived.toLocaleString():"—"}</div>
                                 <div style={{fontSize:8,color:"#2a4a6a",fontFamily:"DM Mono,monospace",marginTop:1}}>{r.casesReceived>0?r.casesReceived+" cases":""}</div>
                               </div>
                             )}
-                          </td>
-                          <td style={{padding:"9px 14px",textAlign:"right",borderBottom:"1px solid #0d1b2a"}}>
+                          </td>}
+                          <td style={{padding:cellP,textAlign:"right",borderBottom:"1px solid #0d1b2a"}}>
                             {(()=>{
                               const storeST = (!isInsuff&&r.piecesReceived>0&&r.piecesSold>0) ? r.piecesSold/r.piecesReceived*100 : null;
                               return storeST!=null
-                                ? <div style={{fontSize:11,color:stClr(storeST),fontFamily:"DM Mono,monospace",fontWeight:600}}>{storeST.toFixed(1)+"%"}</div>
+                                ? <div style={{fontSize:isMobile?10:11,color:stClr(storeST),fontFamily:"DM Mono,monospace",fontWeight:600}}>{storeST.toFixed(1)+"%"}</div>
                                 : <span style={{color:"#3a5a7a",fontFamily:"DM Mono,monospace",fontSize:11}}>—</span>;
                             })()}
                           </td>
-                          <td style={{padding:"9px 14px",textAlign:"right",fontSize:11,color:"#c8dff0",fontFamily:"DM Mono,monospace",borderBottom:"1px solid #0d1b2a"}}>{isInsuff||r.consecHigh===0?"—":r.consecHigh}</td>
-                          <td style={{padding:"9px 14px",textAlign:"right",fontSize:11,color:"#c8dff0",fontFamily:"DM Mono,monospace",borderBottom:"1px solid #0d1b2a"}}>{isInsuff?"—":r.currentCases}</td>
-                          <td style={{padding:"9px 14px",textAlign:"right",fontSize:13,fontWeight:700,color:isInsuff?"#3a5a7a":statusColor,fontFamily:"DM Mono,monospace",borderBottom:"1px solid #0d1b2a"}}>{isInsuff?"—":r.recCases}</td>
-                          <td style={{padding:"9px 14px",fontSize:10,color:statusColor,fontFamily:"DM Mono,monospace",borderBottom:"1px solid #0d1b2a"}}>{statusIcon+" "+statusLabel}</td>
+                          {!isMobile&&<td style={{padding:cellP,textAlign:"right",fontSize:11,color:"#c8dff0",fontFamily:"DM Mono,monospace",borderBottom:"1px solid #0d1b2a"}}>{isInsuff||r.consecHigh===0?"—":r.consecHigh}</td>}
+                          {!isMobile&&<td style={{padding:cellP,textAlign:"right",fontSize:11,color:"#c8dff0",fontFamily:"DM Mono,monospace",borderBottom:"1px solid #0d1b2a"}}>{isInsuff?"—":r.currentCases}</td>}
+                          <td style={{padding:cellP,textAlign:"right",fontSize:isMobile?12:13,fontWeight:700,color:isInsuff?"#3a5a7a":statusColor,fontFamily:"DM Mono,monospace",borderBottom:"1px solid #0d1b2a"}}>{isInsuff?"—":r.recCases}</td>
+                          <td style={{padding:cellP,fontSize:isMobile?9:10,color:statusColor,fontFamily:"DM Mono,monospace",borderBottom:"1px solid #0d1b2a",whiteSpace:"nowrap"}}>{statusIcon+" "+(isMobile?(isInsuff?"Insuff.":r.status==="skip"?"Skip":r.status==="high"?"High":r.status==="watch"?"Watch":"Std"):statusLabel)}</td>
                         </tr>
                       );
                     });
 
                     // DC subtotal row
+                    const subtotalCols = 2+(allocCategory.length>1?1:0)+(isMobile?2:6);
                     rows.push(
                       <tr key={dc+"-subtotal"} style={{background:"#0a1628",borderTop:"1px solid #1e3a5a"}}>
-                        <td colSpan={8} style={{padding:"8px 14px",fontSize:10,color:"#7c3aed",fontFamily:"DM Mono,monospace",letterSpacing:1,fontWeight:600}}>{dc+" SUBTOTAL · "+dcRows.length+" stores"}</td>
+                        <td colSpan={subtotalCols} style={{padding:"8px 14px",fontSize:10,color:"#7c3aed",fontFamily:"DM Mono,monospace",letterSpacing:1,fontWeight:600}}>{dc+" SUBTOTAL · "+dcRows.length+" stores"}</td>
                         <td style={{padding:"8px 14px",textAlign:"right",fontSize:13,fontWeight:700,color:"#7c3aed",fontFamily:"DM Mono,monospace"}}>{dcTotal}</td>
                         <td style={{padding:"8px 14px",fontSize:9,color:"#3a5a7a",fontFamily:"DM Mono,monospace"}}>{"cases"}</td>
                       </tr>
@@ -2183,7 +2192,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                   // Grand total row
                   rows.push(
                     <tr key="grand-total" style={{background:"#06061a",borderTop:"2px solid #7c3aed"}}>
-                      <td colSpan={8} style={{padding:"12px 14px",fontSize:11,color:"#d8eefa",fontFamily:"DM Mono,monospace",letterSpacing:1.5,fontWeight:700,textTransform:"uppercase"}}>{"Grand Total · "+allocData.length+" stores"}</td>
+                      <td colSpan={subtotalCols} style={{padding:"12px 14px",fontSize:11,color:"#d8eefa",fontFamily:"DM Mono,monospace",letterSpacing:1.5,fontWeight:700,textTransform:"uppercase"}}>{"Grand Total · "+allocData.length+" stores"}</td>
                       <td style={{padding:"12px 14px",textAlign:"right",fontSize:16,fontWeight:700,color:"#d8eefa",fontFamily:"DM Mono,monospace"}}>{grandTotal}</td>
                       <td style={{padding:"12px 14px",fontSize:10,color:"#5a8aaa",fontFamily:"DM Mono,monospace"}}>{"total cases"}</td>
                     </tr>
