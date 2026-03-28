@@ -261,7 +261,7 @@ export default function App() {
   const [allocBaseline, setAllocBaseline] = useState("last4");
   const [allocCustomFrom, setAllocCustomFrom] = useState(ALL_FWS_FULL[0]);
   const [allocCustomTo, setAllocCustomTo] = useState(ALL_FWS_FULL[ALL_FWS_FULL.length-1]);
-  const [allocCategory, setAllocCategory] = useState("5inch");
+  const [allocCategory, setAllocCategory] = useState(["5inch"]);
   const [allocDC, setAllocDC] = useState([...ALL_DCS]);
   const [allocSearch, setAllocSearch] = useState("");
   const [districtSort, setDistrictSort] = useState("s26");
@@ -521,7 +521,7 @@ export default function App() {
 
   // ── ALLOCATIONS ──────────────────────────────────────────────────────────────
   const SAFETY = 1.15;
-  const MIN_DELIVERY_WKS = allocCategory==="3inch"||allocCategory==="cascades"||allocCategory==="fused" ? 1 : 2;
+  const MIN_DELIVERY_WKS = allocCategory.every(c=>c==="3inch"||c==="cascades"||c==="fused") ? 1 : 2;
   const CONSEC_HIGH_WKS = 3;
   const HIGH_ST = 85;
   const LOW_ST = 60;
@@ -534,8 +534,10 @@ export default function App() {
   },[allocBaseline, allocCustomFrom, allocCustomTo]);
 
   const allocData = useMemo(()=>{
-    const catDef = ALLOC_CATEGORIES.find(c=>c.key===allocCategory);
-    if(!catDef) return [];
+    const allResults = [];
+    for(const catKey of allocCategory) {
+    const catDef = ALLOC_CATEGORIES.find(c=>c.key===catKey);
+    if(!catDef) continue;
 
     // Pre-index DATA26 by "fw|dc" for fast lookups
     const d26idx = {};
@@ -594,7 +596,7 @@ export default function App() {
     const storeKeys = new Set();
     STORE_DATA.forEach(d=>{ if(allocDC.includes(d[1])) storeKeys.add(d[1]+"|"+d[2]); });
 
-    return [...storeKeys].map(key=>{
+    const catRows = [...storeKeys].map(key=>{
       const [dc, store] = key.split("|");
       const dcFWs = dcCache[dc]||{};
 
@@ -602,7 +604,7 @@ export default function App() {
       const deliveryWks = allocFWs.filter(fw=> dcFWs[fw]?.hasOut);
 
       if(deliveryWks.length < MIN_DELIVERY_WKS) {
-        return {store,dc,insuff:true,avgSales:null,avgST:null,piecesSold:0,piecesReceived:0,casesReceived:0,consecHigh:0,currentCases:null,recCases:null,status:"insuff",packSize:catDef.packSize||10};
+        return {store,dc,catKey,catLabel:catDef.label,insuff:true,avgSales:null,avgST:null,piecesSold:0,piecesReceived:0,casesReceived:0,consecHigh:0,currentCases:null,recCases:null,status:"insuff",packSize:catDef.packSize||10};
       }
 
       // Avg wkly sales = this store's own sales on delivery weeks
@@ -610,7 +612,7 @@ export default function App() {
       const avgSales = storeSalesByWk.reduce((a,v)=>a+v,0)/storeSalesByWk.length;
 
       // Units sold = category-specific from STORE_CAT_UNITS (not all-product total)
-      const catUnitsForStore = STORE_CAT_UNITS[allocCategory]?.[store]||{};
+      const catUnitsForStore = STORE_CAT_UNITS[catKey]?.[store]||{};
       // Sum units across ALL baseline weeks (not just delivery weeks)
       const unitsSold = allocFWs.reduce((a,fw)=>{
         return a + (catUnitsForStore[fw]?.[dc]||0);
@@ -623,12 +625,12 @@ export default function App() {
 
       // consecutive high ST% weeks using direct units/outbound
       let consecHigh = 0;
-      const catOut = STORE_OUTBOUND[allocCategory]||{};
+      const catOut = STORE_OUTBOUND[catKey]||{};
       const allDeliveryWks = ALL_FWS_FULL.filter(fw=> dcCache[dc]?.[fw]?.hasOut).reverse();
       for(const fw of allDeliveryWks) {
         const ob = catOut[store]?.[fw];
         if(!ob||ob[1]===0) continue;
-        const storeUnits = STORE_CAT_UNITS[allocCategory]?.[store]?.[fw]?.[dc]||0;
+        const storeUnits = STORE_CAT_UNITS[catKey]?.[store]?.[fw]?.[dc]||0;
         const st = ob[1]>0 ? storeUnits/ob[1]*100 : null;
         if(st!=null && st>=HIGH_ST) consecHigh++;
         else break;
@@ -647,7 +649,7 @@ export default function App() {
       const packSize = catDef.packByVendor?(catDef.packByVendor[currentVendor]||10):catDef.packSize;
 
       // Pieces received = sum across baseline delivery weeks for this store + category
-      const catOutbound = STORE_OUTBOUND[allocCategory]||{};
+      const catOutbound = STORE_OUTBOUND[catKey]||{};
       const piecesReceived = deliveryWks.reduce((a,fw)=>{
         const ob = catOutbound[store]?.[fw];
         return a + (ob ? ob[1] : 0);
@@ -671,9 +673,12 @@ export default function App() {
         recCases=1; status="standard";
       }
 
-      return {store,dc,insuff:false,avgSales,avgST,piecesSold:unitsSold,piecesReceived,casesReceived,consecHigh,currentCases,recCases,status,packSize};
+      return {store,dc,catKey,catLabel:catDef.label,insuff:false,avgSales,avgST,piecesSold:unitsSold,piecesReceived,casesReceived,consecHigh,currentCases,recCases,status,packSize};
     }).filter(r=>allocDC.includes(r.dc))
       .sort((a,b)=>a.dc===b.dc?Number(a.store)-Number(b.store):a.dc.localeCompare(b.dc));
+    allResults.push(...catRows);
+    } // end for catKey
+    return allResults;
   },[allocFWs,allocCategory,allocDC]);
 
   // ── DISTRICT COMPARISON ──────────────────────────────────────────────────────
@@ -1044,9 +1049,9 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
 
       const runExport = (XLSX) => {
     try {
-      const sku = CAT_SKU[allocCategory] || "DC62042";
-      const catLabel = ALLOC_CATEGORIES.find(c=>c.key===allocCategory)?.label || allocCategory;
-      const packSize = {"5inch":10,"3inch":15,"fused":10,"cascades":6}[allocCategory]||10;
+      const sku = CAT_SKU[allocCategory[0]] || "DC62042";
+      const catLabel = allocCategory.map(k=>ALLOC_CATEGORIES.find(c=>c.key===k)?.label||k).join(", ");
+      const packSize = {"5inch":10,"3inch":15,"fused":10,"cascades":6}[allocCategory[0]]||10;
       const now = new Date().toLocaleString();
       const wb = XLSX.utils.book_new();
 
@@ -2033,9 +2038,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
               </>
             )}
             <div style={{marginLeft:12,fontSize:10,color:"#2a4a6a"}}>CATEGORY:</div>
-            <select value={allocCategory} onChange={e=>setAllocCategory(e.target.value)} style={{background:"#0d1b2a",border:"1px solid #1e3a5a",color:"#a0c4dc",fontSize:10,borderRadius:5,padding:"5px 10px",fontFamily:"DM Mono,monospace"}}>
-              {ALLOC_CATEGORIES.map(c=><option key={c.key} value={c.key}>{c.label}</option>)}
-            </select>
+            <MultiSelect label="Cat" options={ALLOC_CATEGORIES.map(c=>c.key)} selected={allocCategory} onChange={setAllocCategory} fmtOpt={k=>{const c=ALLOC_CATEGORIES.find(x=>x.key===k);return c?c.label:k;}} />
             <div style={{marginLeft:12,fontSize:10,color:"#2a4a6a"}}>DC:</div>
             <MultiSelect label="DC" options={ALL_DCS} selected={allocDC} onChange={setAllocDC}/>
             <div style={{marginLeft:12,fontSize:10,color:"#2a4a6a"}}>STORE:</div>
@@ -2073,7 +2076,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
           <div style={{background:"#080f1d",border:"1px solid #0f1e30",borderRadius:10,overflow:"hidden"}}>
             <div style={{padding:"14px 16px",borderBottom:"1px solid #0f1e30",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
               <span style={{fontSize:10,color:"#7c3aed",letterSpacing:1.5,textTransform:"uppercase"}}>
-                {(()=>{const c=ALLOC_CATEGORIES.find(x=>x.key===allocCategory); return c?c.label+" Allocation · "+allocFWs.length+" Wk Baseline":""})()}
+                {(()=>{const labels=allocCategory.map(k=>{const c=ALLOC_CATEGORIES.find(x=>x.key===k);return c?c.label:k;});return labels.join(" + ")+" Allocation · "+allocFWs.length+" Wk Baseline";})()}
               </span>
               <span style={{fontSize:9,color:"#2a4a6a",fontFamily:"DM Mono,monospace"}}>{(()=>{if(!allocSearch.trim()) return allocData.length+" stores"; const n=/^\d+$/.test(allocSearch.trim()); return allocData.filter(r=>n?r.store===allocSearch.trim():(STORE_META[r.store]?.name||"").toLowerCase().includes(allocSearch.toLowerCase())).length+" stores";})()}</span>
             </div>
@@ -2081,7 +2084,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
             <table style={{width:"100%",borderCollapse:"collapse"}}>
               <thead>
                 <tr style={{background:"#0a1628"}}>
-                  {["Store","DC","Avg Wkly Sales","Pieces Sold","Pieces Rcvd","Store ST%","Consec. High Wks","Current Cases","Rec. Cases","Status"].map(h=>(
+                  {["Store","DC",...(allocCategory.length>1?["Category"]:[]),"Avg Wkly Sales","Pieces Sold","Pieces Rcvd","Store ST%","Consec. High Wks","Current Cases","Rec. Cases","Status"].map(h=>(
                     <th key={h} style={{padding:"10px 14px",textAlign:h==="Store"||h==="DC"||h==="Status"?"left":"right",fontSize:9,color:"#3a6a8a",fontFamily:"DM Mono,monospace",letterSpacing:1.2,textTransform:"uppercase",borderBottom:"1px solid #1e3a5a",whiteSpace:"nowrap"}}>{h}</th>
                   ))}
                 </tr>
@@ -2110,12 +2113,13 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                       const bg = rowIdx%2===0?"#060e1a":"#080f1d";
                       rowIdx++;
                       rows.push(
-                        <tr key={dc+"-"+r.store} style={{background:bg}}>
+                        <tr key={dc+"-"+r.store+"-"+(r.catKey||"")} style={{background:bg}}>
                           <td style={{padding:"9px 14px",fontSize:11,color:"#c8dff0",fontFamily:"DM Mono,monospace",borderBottom:"1px solid #0d1b2a"}}>
                             <div style={{fontWeight:600}}>{"#"+r.store}</div>
                             <div style={{fontSize:9,color:"#3a5a7a",marginTop:2}}>{STORE_META[r.store]?.name||""}</div>
                           </td>
                           <td style={{padding:"9px 14px",fontSize:10,color:"#5a8aaa",fontFamily:"DM Mono,monospace",borderBottom:"1px solid #0d1b2a"}}>{dc}</td>
+                          {allocCategory.length>1&&<td style={{padding:"9px 14px",fontSize:10,color:"#a78bfa",fontFamily:"DM Mono,monospace",borderBottom:"1px solid #0d1b2a"}}>{r.catLabel||r.catKey||""}</td>}
                           <td style={{padding:"9px 14px",textAlign:"right",fontSize:11,color:"#c8dff0",fontFamily:"DM Mono,monospace",borderBottom:"1px solid #0d1b2a"}}>{isInsuff?"—":"$"+r.avgSales.toLocaleString("en-US",{minimumFractionDigits:0,maximumFractionDigits:0})}</td>
                           <td style={{padding:"9px 14px",textAlign:"right",borderBottom:"1px solid #0d1b2a"}}>
                             <div style={{fontSize:11,color:"#c8dff0",fontFamily:"DM Mono,monospace",fontWeight:600}}>{isInsuff?"—":r.piecesSold>0?r.piecesSold.toLocaleString():"—"}</div>
@@ -2277,7 +2281,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
               "fused":    ["PLANT-ORCHID-FUSED","ORCHID-FUSED-COLORED","ORCHID-CASCADE-FUSED"],
               "cascades": ["PLANT-ORCHID-CASCADE-PREMIUM","ORCHID-CASCADE","ORCHID-WATERFALL-PREMIUM-5IN","PLANT-ORCHID-PREMIUM CASCADE"],
             };
-            const catProds = catProdMap[allocCategory]||[];
+            const catProds = allocCategory.flatMap(k=>catProdMap[k]||[]);
             const filteredLog = CORRECTIONS_LOG.filter(r=>{
               if(!allocDC.includes(r.dc)) return false;
               if(catProds.length>0 && !catProds.includes(r.product)) return false;
