@@ -2380,7 +2380,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
 
       {/* Floating Insights Button */}
       <button onClick={()=>setInsightsOpen(o=>!o)} style={{position:"fixed",bottom:isMobile?16:28,right:isMobile?16:28,zIndex:1000,background:"linear-gradient(135deg,#3a8fd4,#7c3aed)",border:"none",borderRadius:50,width:isMobile?48:56,height:isMobile?48:56,cursor:"pointer",boxShadow:"0 4px 20px rgba(124,58,237,0.5)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:isMobile?18:22,transition:"all 0.2s"}}>
-        {insightsOpen?"✕":"💡"}
+        {insightsOpen&&!isMobile?"✕":"💡"}
       </button>
 
       {/* Floating Insights Panel */}
@@ -2390,10 +2390,13 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
           <div style={{padding:isMobile?"12px 16px":"14px 18px",background:"linear-gradient(90deg,#07111f,#0a1c33)",borderBottom:"1px solid #1e3a5a",display:"flex",alignItems:"center",gap:10,flexShrink:0}}>
             <span style={{fontSize:14}}>💡</span>
             <span style={{fontSize:11,fontWeight:700,color:"#d8eefa",fontFamily:"DM Mono,monospace",letterSpacing:1.2}}>INSIGHTS</span>
-            <div style={{marginLeft:"auto",display:"flex",gap:6}}>
+            <div style={{marginLeft:"auto",display:"flex",gap:6,alignItems:"center"}}>
               {[["cards","Quick Insights"],["chat","Ask AI"]].map(([k,l])=>(
                 <button key={k} onClick={()=>setInsightsTab(k)} style={{padding:isMobile?"5px 14px":"4px 12px",background:insightsTab===k?"#3a8fd4":"transparent",border:"1px solid "+(insightsTab===k?"#3a8fd4":"#1e3a5a"),color:insightsTab===k?"#fff":"#3a6a8a",borderRadius:5,cursor:"pointer",fontSize:isMobile?10:9,fontFamily:"DM Mono,monospace",letterSpacing:1}}>{l}</button>
               ))}
+              {isMobile&&(
+                <button onClick={()=>setInsightsOpen(false)} style={{marginLeft:6,background:"#1e3a5a",border:"none",borderRadius:20,width:32,height:32,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:"#a0c4dc",fontSize:16,flexShrink:0}}>✕</button>
+              )}
             </div>
           </div>
 
@@ -2508,7 +2511,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                   </div>
                 )}
               </div>
-              <div style={{padding:isMobile?"12px 16px 24px":"12px 16px",borderTop:"1px solid #0f1e30",display:"flex",gap:8,flexShrink:0}}>
+              <div style={{padding:isMobile?"12px 16px 20px":"12px 16px",borderTop:"1px solid #0f1e30",display:"flex",gap:8,flexShrink:0}}>
                 <input
                   value={chatInput}
                   onChange={e=>setChatInput(e.target.value)}
