@@ -2127,6 +2127,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                   filteredAlloc.forEach(r=>{ dcGroups[r.dc]=(dcGroups[r.dc]||[]); dcGroups[r.dc].push(r); });
                   let grandTotal = 0;
                   let rowIdx = 0;
+                  const subtotalCols = 2+(allocCategory.length>1?1:0)+(isMobile?2:6);
 
                   Object.entries(dcGroups).forEach(([dc, dcRows])=>{
                     const dcTotal = dcRows.reduce((a,r)=>a+(r.recCases||0),0);
@@ -2178,7 +2179,6 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                     });
 
                     // DC subtotal row
-                    const subtotalCols = 2+(allocCategory.length>1?1:0)+(isMobile?2:6);
                     rows.push(
                       <tr key={dc+"-subtotal"} style={{background:"#0a1628",borderTop:"1px solid #1e3a5a"}}>
                         <td colSpan={subtotalCols} style={{padding:"8px 14px",fontSize:10,color:"#7c3aed",fontFamily:"DM Mono,monospace",letterSpacing:1,fontWeight:600}}>{dc+" SUBTOTAL · "+dcRows.length+" stores"}</td>
