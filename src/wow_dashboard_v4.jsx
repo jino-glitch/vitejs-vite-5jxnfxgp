@@ -524,7 +524,13 @@ export default function App() {
   const MIN_DELIVERY_WKS = allocCategory.every(c=>c==="3inch"||c==="cascades"||c==="fused") ? 1 : 2;
   const CONSEC_HIGH_WKS = 3;
   const HIGH_ST = 85;
-  const LOW_ST = 60;
+  const LOW_ST = 60;       // skip threshold — unchanged
+  const STD_FLOOR = 60;    // standard floor back to 60
+  const MIN_UNITS_HIGH = 15; // min units sold in baseline to qualify for +2
+  const TREND_WKS = 3;     // look-back window for trend bonus
+  const TREND_MIN = 2;     // weeks ≥85% in that window = Trending
+  const VOL_HIGH_ST = 78;  // high-volume stores get Watch at this ST%
+  const VOL_TOP_FRAC = 1/3;// top fraction by avg weekly sales = high volume
 
   const allocFWs = useMemo(()=>{
     if(allocBaseline==="last4") return ALL_FWS_FULL.slice(-4);
@@ -596,6 +602,24 @@ export default function App() {
     const storeKeys = new Set();
     STORE_DATA.forEach(d=>{ if(allocDC.includes(d[1])) storeKeys.add(d[1]+"|"+d[2]); });
 
+    // Pre-compute per-DC volume threshold (top 1/3 by avg weekly sales)
+    const dcVolThreshold = {};
+    allocDC.forEach(dc=>{
+      const storeSalesArr = [];
+      storeKeys.forEach(key=>{
+        const [kDC, kStore] = key.split("|");
+        if(kDC!==dc) return;
+        const dcFWs2 = dcCache[dc]||{};
+        const delWks = allocFWs.filter(fw=>dcFWs2[fw]?.hasOut);
+        if(delWks.length===0) return;
+        const avg = delWks.reduce((a,fw)=>a+(storeDataIdx[fw+"|"+dc+"|"+kStore]||[0,0])[0],0)/delWks.length;
+        storeSalesArr.push(avg);
+      });
+      storeSalesArr.sort((a,b)=>b-a);
+      const cutoffIdx = Math.floor(storeSalesArr.length * VOL_TOP_FRAC);
+      dcVolThreshold[dc] = storeSalesArr[cutoffIdx] || 0;
+    });
+
     const catRows = [...storeKeys].map(key=>{
       const [dc, store] = key.split("|");
       const dcFWs = dcCache[dc]||{};
@@ -636,6 +660,16 @@ export default function App() {
         else break;
       }
 
+      // trend bonus: count weeks ≥85% in last TREND_WKS delivery weeks
+      const recentDeliveryWks = allDeliveryWks.slice(0, TREND_WKS);
+      const highWksInWindow = recentDeliveryWks.filter(fw=>{
+        const ob = catOut[store]?.[fw];
+        if(!ob||ob[1]===0) return false;
+        const storeUnits = STORE_CAT_UNITS[catKey]?.[store]?.[fw]?.[dc]||0;
+        return ob[1]>0 && storeUnits/ob[1]*100 >= HIGH_ST;
+      }).length;
+      const isTrending = highWksInWindow >= TREND_MIN && consecHigh < CONSEC_HIGH_WKS;
+
       // current cases — most recent delivery week
       const mostRecentFW = [...ALL_FWS_FULL].reverse().find(fw=> dcFWs[fw]?.hasOut);
       let currentCases = 0, currentVendor = null;
@@ -662,18 +696,39 @@ export default function App() {
       // Store ST% = units sold / pieces received (cases x pack)
       const storeSTPct = (piecesReceived>0&&unitsSold>0) ? unitsSold/piecesReceived*100 : null;
       const stForRec = storeSTPct!=null ? storeSTPct : avgST;
+
+      // Volume tier: is this store in top 1/3 by avg sales for its DC?
+      const isHighVol = avgSales >= (dcVolThreshold[dc]||0);
+
       let recCases, status;
-      if(stForRec===null||stForRec<LOW_ST) {
+      if(stForRec===null || stForRec<LOW_ST) {
+        // Below hard skip threshold (unchanged at 60%)
+        recCases=0; status="skip";
+      } else if(stForRec<STD_FLOOR) {
+        // 60–69%: now Skip (raised standard floor)
         recCases=0; status="skip";
       } else if(catDef.cycle==="weekly") {
-        if(consecHigh>=CONSEC_HIGH_WKS) { recCases=2; status="high"; }
-        else if(stForRec>=HIGH_ST) { recCases=1; status="watch"; }
-        else { recCases=1; status="standard"; }
+        if(consecHigh>=CONSEC_HIGH_WKS && unitsSold>=MIN_UNITS_HIGH) {
+          // 3+ consec weeks ≥85% AND ≥15 units sold → High Performer
+          recCases=2; status="high";
+        } else if(isTrending) {
+          // 2 of last 3 weeks ≥85% (not yet consec) → Trending +2
+          recCases=2; status="trending";
+        } else if(stForRec>=HIGH_ST) {
+          // ≥85% but not consec/trending → Watch
+          recCases=1; status="watch";
+        } else if(isHighVol && stForRec>=VOL_HIGH_ST) {
+          // High-volume store ≥78% → Watch
+          recCases=1; status="watch";
+        } else {
+          // 70–84% standard
+          recCases=1; status="standard";
+        }
       } else {
         recCases=1; status="standard";
       }
 
-      return {store,dc,catKey,catLabel:catDef.label,insuff:false,avgSales,avgST,piecesSold:unitsSold,piecesReceived,casesReceived,consecHigh,currentCases,recCases,status,packSize};
+      return {store,dc,catKey,catLabel:catDef.label,insuff:false,avgSales,avgST,piecesSold:unitsSold,piecesReceived,casesReceived,consecHigh,currentCases,recCases,status,packSize,isTrending,isHighVol};
     }).filter(r=>allocDC.includes(r.dc))
       .sort((a,b)=>a.dc===b.dc?Number(a.store)-Number(b.store):a.dc.localeCompare(b.dc));
     allResults.push(...catRows);
@@ -740,7 +795,7 @@ export default function App() {
   const executeTool = (name, input) => {
     const prods5 = ["PLANT-5-ORCHID","PLANT-ORCHID","ORCHID-PREMIUM-CERAMIC","ORCHID-PLANT","ORCHID-COLOR-EVERYDAY-5 IN","ORCHID-LARGE WHITE"];
     const prods3 = ["PLANT-ORCHID-SMALL","ORCHID-SMALL"];
-    const prodsF = ["PLANT-ORCHID-FUSED","ORCHID-FUSED-COLORED"];
+    const prodsF = ["PLANT-ORCHID-FUSED","ORCHID-FUSED-COLORED","ORCHID-CASCADE-FUSED"];
     const prodsC = ["PLANT-ORCHID-CASCADE-PREMIUM","ORCHID-CASCADE","ORCHID-WATERFALL-PREMIUM-5IN"];
     const catProds = {"5inch":prods5, "3inch":prods3, "fused":prodsF, "cascades":prodsC};
     const last4 = ALL_FWS_FULL.slice(-4);
@@ -2071,7 +2126,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
 
           {/* Legend */}
           <div style={{display:"flex",gap:isMobile?8:16,marginBottom:16,flexWrap:"wrap"}}>
-            {[["🚩","#6b7280","Insufficient Data"],["🔴","#f87171","Skip (0 cases)"],["🟢","#4ade80","Standard (+1)"],["🟡","#f5a623",isMobile?"Watch (+1)":"Watch (+1, approaching high)"],["🔵","#60d9fa","High Performer (+2)"]].map(([icon,color,label])=>(
+            {[["🚩","#6b7280","Insufficient Data"],["🔴","#f87171","Skip (0 cases)"],["🟢","#4ade80","Standard (+1)"],["🟡","#f5a623",isMobile?"Watch (+1)":"Watch (+1, approaching high)"],["🌀","#a3e635",isMobile?"Trending (+2)":"Trending (+2, 2 of 3 wks high)"],["🔵","#60d9fa","High Performer (+2)"]].map(([icon,color,label])=>(
               <div key={label} style={{display:"flex",alignItems:"center",gap:4}}>
                 <span style={{fontSize:10}}>{icon}</span>
                 <span style={{fontSize:9,color,fontFamily:"DM Mono,monospace"}}>{label}</span>
@@ -2135,9 +2190,9 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
 
                     dcRows.forEach(r=>{
                       const isInsuff = r.insuff;
-                      const statusIcon = isInsuff?"🚩":r.status==="skip"?"🔴":r.status==="high"?"🔵":r.status==="watch"?"🟡":"🟢";
-                      const statusLabel = isInsuff?"Insufficient Data":r.status==="skip"?"Skip":r.status==="high"?"High Performer":r.status==="watch"?"Watch":"Standard";
-                      const statusColor = isInsuff?"#6b7280":r.status==="skip"?"#f87171":r.status==="high"?"#60d9fa":r.status==="watch"?"#f5a623":"#4ade80";
+                      const statusIcon = isInsuff?"🚩":r.status==="skip"?"🔴":r.status==="high"?"🔵":r.status==="trending"?"🌀":r.status==="watch"?"🟡":"🟢";
+                      const statusLabel = isInsuff?"Insufficient Data":r.status==="skip"?"Skip":r.status==="high"?"High Performer":r.status==="trending"?"Trending":r.status==="watch"?"Watch":"Standard";
+                      const statusColor = isInsuff?"#6b7280":r.status==="skip"?"#f87171":r.status==="high"?"#60d9fa":r.status==="trending"?"#a3e635":r.status==="watch"?"#f5a623":"#4ade80";
                       const bg = rowIdx%2===0?"#060e1a":"#080f1d";
                       const cellP = isMobile?"6px 8px":"9px 14px";
                       rowIdx++;
@@ -2173,7 +2228,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                           {!isMobile&&<td style={{padding:cellP,textAlign:"right",fontSize:11,color:"#c8dff0",fontFamily:"DM Mono,monospace",borderBottom:"1px solid #0d1b2a"}}>{isInsuff||r.consecHigh===0?"—":r.consecHigh}</td>}
                           {!isMobile&&<td style={{padding:cellP,textAlign:"right",fontSize:11,color:"#c8dff0",fontFamily:"DM Mono,monospace",borderBottom:"1px solid #0d1b2a"}}>{isInsuff?"—":r.currentCases}</td>}
                           <td style={{padding:cellP,textAlign:"right",fontSize:isMobile?12:13,fontWeight:700,color:isInsuff?"#3a5a7a":statusColor,fontFamily:"DM Mono,monospace",borderBottom:"1px solid #0d1b2a"}}>{isInsuff?"—":r.recCases}</td>
-                          <td style={{padding:cellP,fontSize:isMobile?9:10,color:statusColor,fontFamily:"DM Mono,monospace",borderBottom:"1px solid #0d1b2a",whiteSpace:"nowrap"}}>{statusIcon+" "+(isMobile?(isInsuff?"Insuff.":r.status==="skip"?"Skip":r.status==="high"?"High":r.status==="watch"?"Watch":"Std"):statusLabel)}</td>
+                          <td style={{padding:cellP,fontSize:isMobile?9:10,color:statusColor,fontFamily:"DM Mono,monospace",borderBottom:"1px solid #0d1b2a",whiteSpace:"nowrap"}}>{statusIcon+" "+(isMobile?(isInsuff?"Insuff.":r.status==="skip"?"Skip":r.status==="high"?"High":r.status==="trending"?"Trending":r.status==="watch"?"Watch":"Std"):statusLabel)}</td>
                         </tr>
                       );
                     });
@@ -2208,9 +2263,12 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
           {/* Info footer */}
           <div style={{marginTop:14,fontSize:9,color:"#2a4a6a",fontFamily:"DM Mono,monospace",lineHeight:1.8}}>
             <span style={{marginRight:20}}>SAFETY BUFFER: 15%</span>
-            <span style={{marginRight:20}}>MIN DELIVERY WKS FOR REC: 2</span>
+            <span style={{marginRight:20}}>STANDARD FLOOR: 60%</span>
             <span style={{marginRight:20}}>HIGH ST THRESHOLD: 85%</span>
-            <span>CONSEC WEEKS FOR +2: 3</span>
+            <span style={{marginRight:20}}>CONSEC WEEKS FOR +2: 3</span>
+            <span style={{marginRight:20}}>MIN UNITS FOR +2: 15</span>
+            <span style={{marginRight:20}}>TREND BONUS: 2 of 3 wks ≥85%</span>
+            <span>VOL BOOST: TOP 1/3 STORES ≥78%</span>
           </div>
 
           {/* Delivery Matrix */}
