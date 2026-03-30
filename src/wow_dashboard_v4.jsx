@@ -228,7 +228,7 @@ export default function App() {
   const [pwShake, setPwShake] = useState(false);
 
   const [tab, setTab] = useState("wow");
-  const ALL_FWS_FULL = [202601,202602,202603,202604,202605,202606,202607,202608,202609,202610,202611,202612];
+  const ALL_FWS_FULL = [202601,202602,202603,202604,202605,202606,202607,202608,202609,202610,202611,202612,202613];
   const computePresetFWs = (preset) => {
     const sorted = [...ALL_FWS_FULL];
     if(preset==="last4") return sorted.slice(-4);
