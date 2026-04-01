@@ -334,7 +334,7 @@ export default function App() {
   const lyS = lyFW?sumS25(lyW):null;
   const thisST = calcST(thisU, dmOutbound(thisW, latestFW));
   const lastST = prevFW?calcST(sumU(lastW),dmOutbound(lastW,prevFW)):null;
-  const lyST = lyFW?calcST(sumU25(lyW),sumO25(lyW)):null;
+  const lyST = null; // FY25 outbound too sparse
 
   const wowD = lastS!=null?thisS-lastS:null, wowP = lastS?wowD/lastS*100:null;
   const yoyD = lyS!=null?thisS-lyS:null, yoyP = lyS?yoyD/lyS*100:null;
@@ -357,8 +357,7 @@ export default function App() {
       const prodRowsThis = thisW.filter(function(d){ return d[2]===prod; });
       const prodRowsLast = lastW.filter(function(d){ return d[2]===prod; });
       const st=calcST(cur.u, dmOutbound(prodRowsThis, latestFW));
-      const stLy=calcST(ly.u,ly.o);
-      const stDiff=st!=null&&stLy!=null?st-stLy:null;
+      const stLy=null; const stDiff=null;
       const aur = cur.u>0?cur.s/cur.u:null;
       return {prod,sales:cur.s,units:cur.u,aur,wd,wp,lyS:ly.s||null,lyU:ly.u||0,yd,yp,st,stLy,stDiff};
     }).sort((a,b)=>
@@ -386,8 +385,7 @@ export default function App() {
       const dcRowsThis = thisW.filter(function(d){ return d[1]===dc; });
       const dcRowsLast = lastW.filter(function(d){ return d[1]===dc; });
       const st=calcST(cur.u, dmOutbound(dcRowsThis, latestFW));
-      const stLy=calcST(ly.u,ly.o);
-      const stDiff=st!=null&&stLy!=null?st-stLy:null;
+      const stLy=null; const stDiff=null;
       const aur = cur.u>0?cur.s/cur.u:null;
       return {dc,sales:cur.s,units:cur.u,aur,wd,wp,lyS:ly.s||null,lyU:ly.u||0,yd,yp,st,stLy,stDiff};
     }).sort((a,b)=>b.sales-a.sales);
@@ -424,7 +422,7 @@ export default function App() {
   const ytdD=ytd26-ytd25, ytdP=ytd25>0?ytdD/ytd25*100:null;
   const ytdOutbound26 = allFW26.reduce(function(a,d){ var cases=d[6]; if(!cases||cases<=0) return a; return a+(cases*(PROD_PACK[d[2]]||10)); },0);
   const ytdST26=calcST(sumU(allFW26),ytdOutbound26);
-  const ytdST25=calcST(sumU25(allFW25),sumO25(allFW25));
+  const ytdST25=null; // FY25 outbound too sparse
 
   const ytdByDC = useMemo(()=>{
     const m26={}, m25={};
@@ -434,7 +432,7 @@ export default function App() {
     return dcs.map(dc=>{
       const a=m26[dc]||{s:0,u:0,o:0}, b=m25[dc]||{s:0,u:0,o:0};
       const delta=a.s-b.s, pct=b.s>0?delta/b.s*100:null;
-      const st26=calcST(a.u,a.o), st25=calcST(b.u,b.o), stD=st26!=null&&st25!=null?st26-st25:null;
+      const st26=calcST(a.u,a.o), st25=null, stD=null;
       const aur26=a.u>0?a.s/a.u:null;
       return {dc,s26:a.s,u26:a.u,aur26,s25:b.s,u25:b.u,delta,pct,st26,st25,stD};
     }).sort((a,b)=>sortYTDDC==="s26"?b.s26-a.s26:sortYTDDC==="delta"?(b.delta||0)-(a.delta||0):sortYTDDC==="st26"?(b.st26||0)-(a.st26||0):(b.pct||0)-(a.pct||0));
@@ -448,7 +446,7 @@ export default function App() {
     return prods.map(prod=>{
       const a=m26[prod]||{s:0,u:0,o:0}, b=m25[prod]||{s:0,u:0,o:0};
       const delta=a.s-b.s, pct=b.s>0?delta/b.s*100:null;
-      const st26=calcST(a.u,a.o), st25=calcST(b.u,b.o), stD=st26!=null&&st25!=null?st26-st25:null;
+      const st26=calcST(a.u,a.o), st25=null, stD=null;
       const aur26=a.u>0?a.s/a.u:null;
       return {prod,s26:a.s,u26:a.u,aur26,s25:b.s,u25:b.u,delta,pct,st26,st25,stD};
     }).sort((a,b)=>sortYTDProd==="s26"?b.s26-a.s26:sortYTDProd==="delta"?(b.delta||0)-(a.delta||0):sortYTDProd==="st26"?(b.st26||0)-(a.st26||0):(b.pct||0)-(a.pct||0));
@@ -2169,20 +2167,17 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
             {/* DC Rec Cases Summary */}
             {(()=>{
               const dcTotals = {};
-              const dcSTPct = {};
               allocData.forEach(r=>{ if(!r.insuff && r.recCases!=null) { dcTotals[r.dc]=(dcTotals[r.dc]||0)+r.recCases; } });
-              allocData.forEach(r=>{ if(!r.insuff && r.piecesReceived>0) { if(!dcSTPct[r.dc]) dcSTPct[r.dc]={sum:0,n:0}; dcSTPct[r.dc].sum+=r.piecesSold/r.piecesReceived*100; dcSTPct[r.dc].n++; } });
-              const entries = allocDC.filter(dc=>dcTotals[dc]!=null).map(dc=>({dc,cases:dcTotals[dc],st:dcSTPct[dc]?dcSTPct[dc].sum/dcSTPct[dc].n:null}));
+              const entries = allocDC.filter(dc=>dcTotals[dc]!=null).map(dc=>({dc,cases:dcTotals[dc]}));
               if(entries.length===0) return null;
               return (
                 <div style={{padding:"10px 16px",borderBottom:"1px solid #0f1e30",display:"flex",flexWrap:"wrap",gap:8,alignItems:"center"}}>
                   <span style={{fontSize:9,color:"#3a6a8a",fontFamily:"DM Mono,monospace",letterSpacing:1.2,textTransform:"uppercase",marginRight:4}}>Rec. Cases by DC:</span>
-                  {entries.map(function(entry){var dc=entry.dc; var cases=entry.cases; var st=entry.st; var stColor=st==null?"#5a8aaa":st>=80?"#4ade80":st>=60?"#f5a623":"#f87171"; return (
-                    <span key={dc} style={{fontSize:10,fontFamily:"DM Mono,monospace",background:"#0a1628",border:"1px solid #1e3a5a",borderRadius:5,padding:"4px 10px",color:"#7ec8e3",display:"inline-flex",flexDirection:"column",gap:1}}>
-                      <span><span style={{color:"#5a8aaa"}}>{dc}:</span>{" "}<span style={{color:"#4ade80",fontWeight:700}}>{cases}</span>{" cases"}</span>
-                      <span style={{fontSize:9,color:stColor,fontFamily:"DM Mono,monospace"}}>{"ST%: "+(st!=null?st.toFixed(0)+"%":"—")}</span>
+                  {entries.map(({dc,cases})=>(
+                    <span key={dc} style={{fontSize:10,fontFamily:"DM Mono,monospace",background:"#0a1628",border:"1px solid #1e3a5a",borderRadius:5,padding:"3px 10px",color:"#7ec8e3"}}>
+                      <span style={{color:"#5a8aaa"}}>{dc}:</span>{" "}<span style={{color:"#4ade80",fontWeight:700}}>{cases}</span>{" cases"}
                     </span>
-                  );})}
+                  ))}
                   <span style={{marginLeft:"auto",fontSize:10,fontFamily:"DM Mono,monospace",color:"#7c3aed",fontWeight:700}}>
                     {"Total: "+entries.reduce((a,e)=>a+e.cases,0)+" cases"}
                   </span>
