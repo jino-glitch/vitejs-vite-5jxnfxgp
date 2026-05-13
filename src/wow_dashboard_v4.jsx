@@ -98,15 +98,15 @@ function MultiSelect({label, options, selected, onChange, fmtOpt}) {
   const toggle = v => selected.includes(v)?onChange(selected.filter(x=>x!==v)):onChange([...selected,v]);
   return (
     <div style={{position:"relative",display:"inline-block",minWidth:155}}>
-      <button onClick={()=>setOpen(!open)} style={{background:"#ede9e3",border:"1px solid #d8d3c9",color:"#2d3752",padding:"7px 12px",borderRadius:6,cursor:"pointer",fontSize:11,width:"100%",textAlign:"left",display:"flex",justifyContent:"space-between",alignItems:"center",fontFamily:"'DM Mono',monospace"}}>
+      <button onClick={()=>setOpen(!open)} style={{background:"#ede9e3",border:"1px solid #d8d3c9",color:"#0a0f1e",padding:"7px 12px",borderRadius:6,cursor:"pointer",fontSize:14,width:"100%",textAlign:"left",display:"flex",justifyContent:"space-between",alignItems:"center",fontFamily:"'DM Sans',sans-serif"}}>
         <span>{label}: {all?"All":selected.length===0?"None":selected.length+" sel."}</span>
         <span style={{marginLeft:8,opacity:0.5}}>{open?"▲":"▼"}</span>
       </button>
       {open&&(
         <div style={{position:"absolute",zIndex:9999,top:"105%",left:0,background:"#ede9e3",border:"1px solid #d8d3c9",borderRadius:7,minWidth:210,maxHeight:280,overflowY:"auto",boxShadow:"0 12px 40px #0008"}}>
-          <div onClick={()=>all?onChange([]):onChange([...options])} style={{padding:"8px 14px",cursor:"pointer",borderBottom:"1px solid #d8d3c9",color:"#c8934a",fontSize:11,fontWeight:600,fontFamily:"'DM Mono',monospace"}}>{all?"Deselect All":"Select All"}</div>
+          <div onClick={()=>all?onChange([]):onChange([...options])} style={{padding:"8px 14px",cursor:"pointer",borderBottom:"1px solid #d8d3c9",color:"#0a0f1e",fontSize:14,fontWeight:600,fontFamily:"'DM Sans',sans-serif"}}>{all?"Deselect All":"Select All"}</div>
           {options.map(o=>(
-            <div key={o} onClick={()=>toggle(o)} style={{padding:"6px 14px",cursor:"pointer",fontSize:11,color:selected.includes(o)?"#c8934a":"#2d3752",background:selected.includes(o)?"#e4ddd4":"transparent",display:"flex",alignItems:"center",gap:8,fontFamily:"'DM Mono',monospace"}}>
+            <div key={o} onClick={()=>toggle(o)} style={{padding:"6px 14px",cursor:"pointer",fontSize:14,color:selected.includes(o)?"#0a0f1e":"#0a0f1e",background:selected.includes(o)?"#e4ddd4":"transparent",display:"flex",alignItems:"center",gap:8,fontFamily:"'DM Sans',sans-serif"}}>
               <span style={{width:11,height:11,borderRadius:3,border:"1px solid #c4beb5",background:selected.includes(o)?"#c8934a":"transparent",display:"inline-block",flexShrink:0}}/>
               {fmtOpt?fmtOpt(o):o}
             </div>
@@ -121,18 +121,18 @@ function KPI({label,value,delta,pct,stVal}) {
   const c = stVal!=null ? stClr(stVal) : (delta==null?"#2d3752":delta>=0?"#4ade80":"#f87171");
   return (
     <div style={{background:"#ffffff",border:"1px solid #d8d3c9",borderRadius:10,padding:"16px 18px",flex:1,minWidth:130}}>
-      <div style={{fontSize:9,color:"#2d3752",fontFamily:"'DM Mono',monospace",letterSpacing:1.5,textTransform:"uppercase",marginBottom:6}}>{label}</div>
-      <div style={{fontSize:20,fontWeight:700,color: stVal!=null?c:"#0a0f1e",fontFamily:"'DM Mono',monospace"}}>{value}</div>
+      <div style={{fontSize:12,color:"#2d3752",fontFamily:"'DM Sans',sans-serif",letterSpacing:0.5,textTransform:"uppercase",marginBottom:6}}>{label}</div>
+      <div style={{fontSize:22,fontWeight:700,color: stVal!=null?c:"#0a0f1e",fontFamily:"'DM Sans',sans-serif"}}>{value}</div>
       {delta!=null&&<div style={{marginTop:5,display:"flex",gap:7,alignItems:"center"}}>
-        <span style={{fontSize:12,color:c,fontFamily:"'DM Mono',monospace"}}>{fmtD(delta)}</span>
-        <span style={{fontSize:10,color:c,background:c+"22",borderRadius:4,padding:"2px 6px",fontFamily:"'DM Mono',monospace"}}>{fmtP(pct)}</span>
+        <span style={{fontSize:15,color:c,fontFamily:"'DM Sans',sans-serif"}}>{fmtD(delta)}</span>
+        <span style={{fontSize:13,color:c,background:c+"22",borderRadius:4,padding:"2px 6px",fontFamily:"'DM Sans',sans-serif"}}>{fmtP(pct)}</span>
       </div>}
     </div>
   );
 }
 
 function STBar({val}) {
-  if(val==null) return <span style={{color:"#3a5a7a",fontFamily:"'DM Mono',monospace",fontSize:11}}>—</span>;
+  if(val==null) return <span style={{color:"#3a5a7a",fontFamily:"'DM Sans',sans-serif",fontSize:14}}>—</span>;
   const capped = Math.min(val,100);
   const c = stClr(val);
   return (
@@ -140,7 +140,7 @@ function STBar({val}) {
       <div style={{width:48,height:6,background:"#ede9e3",borderRadius:3,overflow:"hidden"}}>
         <div style={{width:capped+"%",height:"100%",background:c,borderRadius:3}}/>
       </div>
-      <span style={{color:c,fontFamily:"'DM Mono',monospace",fontSize:11,minWidth:42,textAlign:"right"}}>{fmtST(val)}</span>
+      <span style={{color:c,fontFamily:"'DM Sans',sans-serif",fontSize:14,minWidth:42,textAlign:"right"}}>{fmtST(val)}</span>
     </div>
   );
 }
@@ -148,7 +148,7 @@ function STBar({val}) {
 
 function Sparkline({prod}) {
   const vals = SPARK_DATA[prod] || [];
-  if(!vals.length) return <span style={{color:"#2d3752",fontSize:10}}>—</span>;
+  if(!vals.length) return <span style={{color:"#2d3752",fontSize:13}}>—</span>;
   const max = Math.max(...vals, 1);
   const w = 6, gap = 2, h = 28;
   const total = vals.length*(w+gap)-gap;
@@ -172,20 +172,20 @@ function TopBottom3({rows, nameKey, valueKey, label, fmt: fmtFn}) {
   return (
     <div style={{display:"flex",gap:12,marginBottom:20,flexWrap:"wrap"}}>
       <div style={{background:"#f0faf5",border:"1px solid #b8deca",borderRadius:8,padding:"12px 16px",flex:1,minWidth:260}}>
-        <div style={{fontSize:9,color:"#4ade80",letterSpacing:1.5,textTransform:"uppercase",marginBottom:8}}>Top 3 · {label}</div>
+        <div style={{fontSize:12,color:"#4ade80",letterSpacing:0.5,textTransform:"uppercase",marginBottom:8}}>Top 3 · {label}</div>
         {top3.map((r,i)=>(
           <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:5}}>
-            <span style={{fontSize:10,color:"#2d3752",fontFamily:"DM Mono,monospace"}}>{r[nameKey]}</span>
-            <span style={{fontSize:11,color:"#4ade80",fontFamily:"DM Mono,monospace",fontWeight:600}}>{fmtFn(r[valueKey])}</span>
+            <span style={{fontSize:13,color:"#2d3752",fontFamily:"DM Sans,sans-serif"}}>{r[nameKey]}</span>
+            <span style={{fontSize:14,color:"#4ade80",fontFamily:"DM Sans,sans-serif",fontWeight:600}}>{fmtFn(r[valueKey])}</span>
           </div>
         ))}
       </div>
       <div style={{background:"#fdf3f2",border:"1px solid #f0c0bb",borderRadius:8,padding:"12px 16px",flex:1,minWidth:260}}>
-        <div style={{fontSize:9,color:"#f87171",letterSpacing:1.5,textTransform:"uppercase",marginBottom:8}}>Bottom 3 · {label}</div>
+        <div style={{fontSize:12,color:"#f87171",letterSpacing:0.5,textTransform:"uppercase",marginBottom:8}}>Bottom 3 · {label}</div>
         {bot3.map((r,i)=>(
           <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:5}}>
-            <span style={{fontSize:10,color:"#2d3752",fontFamily:"DM Mono,monospace"}}>{r[nameKey]}</span>
-            <span style={{fontSize:11,color:"#f87171",fontFamily:"DM Mono,monospace",fontWeight:600}}>{fmtFn(r[valueKey])}</span>
+            <span style={{fontSize:13,color:"#2d3752",fontFamily:"DM Sans,sans-serif"}}>{r[nameKey]}</span>
+            <span style={{fontSize:14,color:"#f87171",fontFamily:"DM Sans,sans-serif",fontWeight:600}}>{fmtFn(r[valueKey])}</span>
           </div>
         ))}
       </div>
@@ -198,7 +198,7 @@ function THead({cols,sort,onSort}) {
     <thead>
       <tr style={{background:"#ede9e3"}}>
         {cols.map(c=>(
-          <th key={c.key} onClick={()=>onSort&&onSort(c.key)} style={{padding:"10px 14px",textAlign:c.num?"right":"left",fontSize:9,color:sort===c.key?"#c8934a":"#2d3752",fontFamily:"'DM Mono',monospace",letterSpacing:1.2,textTransform:"uppercase",cursor:onSort?"pointer":"default",background:sort===c.key?"#e4ddd4":"transparent",borderBottom:"1px solid #d8d3c9",whiteSpace:"nowrap"}}>
+          <th key={c.key} onClick={()=>onSort&&onSort(c.key)} style={{padding:"10px 14px",textAlign:c.num?"right":"left",fontSize:12,color:sort===c.key?"#c8934a":"#2d3752",fontFamily:"'DM Sans',sans-serif",letterSpacing:0.3,textTransform:"uppercase",cursor:onSort?"pointer":"default",background:sort===c.key?"#e4ddd4":"transparent",borderBottom:"1px solid #d8d3c9",whiteSpace:"nowrap"}}>
             {c.label}{sort===c.key?" ▼":""}
           </th>
         ))}
@@ -1236,19 +1236,19 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
   };
 
   const isMobile = typeof window!=="undefined"&&window.innerWidth<640;
-  const tabS = active => ({padding:isMobile?"6px 8px":"10px 22px",cursor:"pointer",fontFamily:"'DM Mono',monospace",fontSize:isMobile?9:11,letterSpacing:isMobile?0.3:1.2,borderRadius:6,border:"none",background:active?"#c8934a":"transparent",color:active?"#fff":"#3a6a8a",transition:"all 0.15s",whiteSpace:"nowrap",flexShrink:0});
-  const tdS = (align,color) => ({padding:"9px 14px",textAlign:align||"left",fontSize:11,color:color||"#0a0f1e",fontFamily:"'DM Mono',monospace",borderBottom:"1px solid #d8d3c9"});
+  const tabS = active => ({padding:isMobile?"6px 8px":"10px 22px",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:isMobile?9:11,letterSpacing:isMobile?0.3:1.2,borderRadius:6,border:"none",background:active?"#c8934a":"transparent",color:active?"#fff":"#3a6a8a",transition:"all 0.15s",whiteSpace:"nowrap",flexShrink:0});
+  const tdS = (align,color) => ({padding:"9px 14px",textAlign:align||"left",fontSize:14,color:color||"#0a0f1e",fontFamily:"'DM Sans',sans-serif",borderBottom:"1px solid #d8d3c9"});
 
   const dashboard = (
-    <div style={{minHeight:"100vh",background:"#f5f4f0",color:"#0a0f1e",fontFamily:"'DM Mono',monospace",padding:"0 0 60px 0"}}>
+    <div style={{minHeight:"100vh",background:"#f5f4f0",color:"#0a0f1e",fontFamily:"'DM Sans',sans-serif",padding:"0 0 60px 0"}}>
       {/* Header */}
       <div style={{background:"#ffffff",borderBottom:"1px solid #d8d3c9",padding:isMobile?"10px 16px":"14px 28px",display:"flex",alignItems:"center",gap:isMobile?10:20}}>
         <img src={LOGO_B64} alt="Sprouts" style={{height:isMobile?32:44,objectFit:"contain",flexShrink:0}}/>
         <div style={{minWidth:0}}>
-          <div style={{fontSize:isMobile?12:16,fontWeight:700,color:"#0a0f1e",letterSpacing:1,fontFamily:"'DM Mono',monospace"}}>FLORAL SALES DASHBOARD</div>
-          <div style={{fontSize:9,color:"#2d3752",letterSpacing:isMobile?1:2,marginTop:2}}>FY2026 vs FY2025 · RETAIL WHOLESALE</div>
+          <div style={{fontSize:isMobile?12:16,fontWeight:700,color:"#0a0f1e",letterSpacing:0.2,fontFamily:"'DM Sans',sans-serif"}}>FLORAL SALES DASHBOARD</div>
+          <div style={{fontSize:12,color:"#2d3752",letterSpacing:isMobile?1:2,marginTop:2}}>FY2026 vs FY2025</div>
         </div>
-        {!isMobile&&<div style={{marginLeft:"auto",fontSize:9,color:"#2d3752",textAlign:"right"}}>
+        {!isMobile&&<div style={{marginLeft:"auto",fontSize:12,color:"#2d3752",textAlign:"right"}}>
           <div>DATA THRU {FW_LABEL(ALL_FWS[ALL_FWS.length-1])}</div>
           <div style={{marginTop:2}}>{new Date().toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})}</div>
         </div>}
@@ -1256,23 +1256,23 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
 
       {/* Date Presets */}
       <div style={{background:"#f5f4f0",borderBottom:"1px solid #d8d3c9",padding:"10px 28px",display:tab==="alloc"?"none":"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
-        <span style={{fontSize:9,color:"#2d3752",fontFamily:"DM Mono,monospace",letterSpacing:1.2,marginRight:4}}>DATE RANGE:</span>
+        <span style={{fontSize:12,color:"#2d3752",fontFamily:"DM Sans,sans-serif",letterSpacing:0.3,marginRight:4}}>DATE RANGE:</span>
         {[["last4","Last 4 Wks"],["last8","Last 8 Wks"],["ytd","Full YTD"],["custom","Custom"]].map(([key,lbl])=>(
-          <button key={key} onClick={()=>applyPreset(key)} style={{padding:"5px 14px",background:datePreset===key?"#c8934a":"#ffffff",border:"1px solid "+(datePreset===key?"#c8934a":"#d8d3c9"),color:datePreset===key?"#fff":"#2d3752",borderRadius:6,cursor:"pointer",fontSize:10,fontFamily:"DM Mono,monospace",transition:"all 0.15s"}}>{lbl}</button>
+          <button key={key} onClick={()=>applyPreset(key)} style={{padding:"5px 14px",background:datePreset===key?"#c8934a":"#ffffff",border:"1px solid "+(datePreset===key?"#c8934a":"#d8d3c9"),color:datePreset===key?"#fff":"#2d3752",borderRadius:6,cursor:"pointer",fontSize:13,fontFamily:"DM Sans,sans-serif",transition:"all 0.15s"}}>{lbl}</button>
         ))}
         {datePreset==="custom"&&(
           <div style={{display:"flex",alignItems:"center",gap:6,marginLeft:4}}>
-            <span style={{fontSize:9,color:"#2d3752"}}>FROM</span>
-            <select value={customFrom} onChange={e=>{const v=Number(e.target.value);setCustomFrom(v);applyCustom(v,customTo);}} style={{background:"#ede9e3",border:"1px solid #d8d3c9",color:"#2d3752",fontSize:10,borderRadius:5,padding:"4px 8px",fontFamily:"DM Mono,monospace"}}>
+            <span style={{fontSize:12,color:"#2d3752"}}>FROM</span>
+            <select value={customFrom} onChange={e=>{const v=Number(e.target.value);setCustomFrom(v);applyCustom(v,customTo);}} style={{background:"#ede9e3",border:"1px solid #d8d3c9",color:"#2d3752",fontSize:13,borderRadius:5,padding:"4px 8px",fontFamily:"DM Sans,sans-serif"}}>
               {ALL_FWS_FULL.map(fw=><option key={fw} value={fw}>{FW_LABEL(fw)}</option>)}
             </select>
-            <span style={{fontSize:9,color:"#2d3752"}}>TO</span>
-            <select value={customTo} onChange={e=>{const v=Number(e.target.value);setCustomTo(v);applyCustom(customFrom,v);}} style={{background:"#ede9e3",border:"1px solid #d8d3c9",color:"#2d3752",fontSize:10,borderRadius:5,padding:"4px 8px",fontFamily:"DM Mono,monospace"}}>
+            <span style={{fontSize:12,color:"#2d3752"}}>TO</span>
+            <select value={customTo} onChange={e=>{const v=Number(e.target.value);setCustomTo(v);applyCustom(customFrom,v);}} style={{background:"#ede9e3",border:"1px solid #d8d3c9",color:"#2d3752",fontSize:13,borderRadius:5,padding:"4px 8px",fontFamily:"DM Sans,sans-serif"}}>
               {ALL_FWS_FULL.map(fw=><option key={fw} value={fw}>{FW_LABEL(fw)}</option>)}
             </select>
           </div>
         )}
-        <span style={{fontSize:9,color:"#2d3752",marginLeft:8}}>
+        <span style={{fontSize:12,color:"#2d3752",marginLeft:8}}>
           {FW_LABEL([...selFW].sort()[0])} – {FW_LABEL([...selFW].sort().slice(-1)[0])} · {selFW.length} {selFW.length===1?"week":"weeks"}
         </span>
       </div>
@@ -1283,7 +1283,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
         <MultiSelect label="Product" options={ALL_PRODUCTS} selected={selProd} onChange={setSelProd}/>
         <MultiSelect label="Vendor" options={ALL_VENDORS} selected={selVendor} onChange={setSelVendor}/>
         <MultiSelect label="Category" options={ALL_CATEGORIES} selected={selCategory} onChange={setSelCategory}/>
-        <div style={{fontSize:9,color:"#2d3752",marginLeft:"auto",lineHeight:1.6}}>
+        <div style={{fontSize:12,color:"#2d3752",marginLeft:"auto",lineHeight:1.6}}>
           <div>ST% = Units Sold / Outbound Pieces</div>
           <div style={{display:"flex",gap:12,marginTop:2}}>
             <span style={{color:"#4ade80"}}>■ ≥80%</span>
@@ -1291,7 +1291,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
             <span style={{color:"#f87171"}}>■ &lt;60%</span>
           </div>
         </div>
-        <button onClick={()=>{applyPreset("ytd");setCustomFrom(ALL_FWS_FULL[0]);setCustomTo(ALL_FWS_FULL[ALL_FWS_FULL.length-1]);setSelDC([...ALL_DCS]);setSelProd([...ALL_PRODUCTS]);setSelVendor([...ALL_VENDORS]);setSelCategory([...ALL_CATEGORIES]);setExpandedDC(null);setStoreWkFilter([ALL_FWS_FULL[ALL_FWS_FULL.length-1]]);setStoreDCFilter([...ALL_DCS]);}} style={{padding:"7px 14px",background:"#ede9e3",border:"1px solid #d8d3c9",color:"#2d3752",borderRadius:6,cursor:"pointer",fontSize:10,fontFamily:"DM Mono,monospace",letterSpacing:1}}>RESET</button>
+        <button onClick={()=>{applyPreset("ytd");setCustomFrom(ALL_FWS_FULL[0]);setCustomTo(ALL_FWS_FULL[ALL_FWS_FULL.length-1]);setSelDC([...ALL_DCS]);setSelProd([...ALL_PRODUCTS]);setSelVendor([...ALL_VENDORS]);setSelCategory([...ALL_CATEGORIES]);setExpandedDC(null);setStoreWkFilter([ALL_FWS_FULL[ALL_FWS_FULL.length-1]]);setStoreDCFilter([...ALL_DCS]);}} style={{padding:"7px 14px",background:"#ede9e3",border:"1px solid #d8d3c9",color:"#2d3752",borderRadius:6,cursor:"pointer",fontSize:13,fontFamily:"DM Sans,sans-serif",letterSpacing:0.2}}>RESET</button>
       </div>
 
       {/* Tabs */}
@@ -1308,7 +1308,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
       <div style={{padding:isMobile?"12px 12px":"24px 28px"}}>
       {tab==="wow"&&(
         <div>
-          <div style={{fontSize:10,color:"#2d3752",marginBottom:16}}>
+          <div style={{fontSize:13,color:"#2d3752",marginBottom:16}}>
             Showing <span style={{color:"#c8934a"}}>{FW_LABEL(latestFW)}</span> vs prev week <span style={{color:"#c8934a"}}>{prevFW?FW_LABEL(prevFW):"—"}</span>
           </div>
 
@@ -1333,8 +1333,8 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
             {/* By Product - WoW */}
             <div style={{background:"#ffffff",border:"1px solid #d8d3c9",borderRadius:10,overflow:"hidden"}}>
               <div style={{padding:"14px 16px",borderBottom:"1px solid #d8d3c9",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                <span style={{fontSize:10,color:"#2d3752",letterSpacing:1.5,textTransform:"uppercase"}}>By Product · {FW_LABEL(latestFW)}</span>
-                <select value={sortWow} onChange={e=>setSortWow(e.target.value)} style={{background:"#ede9e3",border:"1px solid #d8d3c9",color:"#2d3752",fontSize:9,borderRadius:4,padding:"3px 6px",fontFamily:"'DM Mono',monospace",cursor:"pointer"}}>
+                <span style={{fontSize:13,color:"#2d3752",letterSpacing:0.5,textTransform:"uppercase"}}>By Product · {FW_LABEL(latestFW)}</span>
+                <select value={sortWow} onChange={e=>setSortWow(e.target.value)} style={{background:"#ede9e3",border:"1px solid #d8d3c9",color:"#2d3752",fontSize:12,borderRadius:4,padding:"3px 6px",fontFamily:"'DM Sans',sans-serif",cursor:"pointer"}}>
                   <option value="sales">Sort: Sales</option>
                   <option value="wd">Sort: WoW $</option>
                   <option value="wp">Sort: WoW %</option>
@@ -1365,7 +1365,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
             {/* By DC - WoW */}
             <div style={{background:"#ffffff",border:"1px solid #d8d3c9",borderRadius:10,overflow:"hidden"}}>
               <div style={{padding:"14px 16px",borderBottom:"1px solid #d8d3c9"}}>
-                <span style={{fontSize:10,color:"#2d3752",letterSpacing:1.5,textTransform:"uppercase"}}>By DC · {FW_LABEL(latestFW)}</span>
+                <span style={{fontSize:13,color:"#2d3752",letterSpacing:0.5,textTransform:"uppercase"}}>By DC · {FW_LABEL(latestFW)}</span>
               </div>
               <div style={{overflowX:"auto"}}>
               <table style={{width:"100%",borderCollapse:"collapse"}}>
@@ -1375,7 +1375,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                     const isExp = expandedDC===r.dc;
                     return [
                       <tr key={r.dc} onClick={()=>setExpandedDC(isExp?null:r.dc)} style={{background:i%2===0?"#ffffff":"#f5f4f0",cursor:"pointer"}}>
-                        <td style={tdS()}><span style={{color:"#c8934a",marginRight:6,fontSize:9}}>{isExp?"▼":"▶"}</span>{r.dc}</td>
+                        <td style={tdS()}><span style={{color:"#c8934a",marginRight:6,fontSize:12}}>{isExp?"▼":"▶"}</span>{r.dc}</td>
                         <td style={tdS("right")}>{fmt$(r.sales)}</td>
                         <td style={tdS("right")}>{fmtU(r.units)}</td>
                         <td style={tdS("right")}>{r.aur!=null?"$"+r.aur.toFixed(2):"—"}</td>
@@ -1385,7 +1385,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                       </tr>,
                       isExp && storeTable.map((s,j)=>(
                         <tr key={r.dc+"-"+s.store} style={{background:"#f5f4f0"}}>
-                          <td style={{...tdS(),paddingLeft:28,color:"#2d3752",fontSize:10}}>Store {s.store}</td>
+                          <td style={{...tdS(),paddingLeft:28,color:"#2d3752",fontSize:13}}>Store {s.store}</td>
                           <td style={tdS("right","#8ab4cc")}>{fmt$(s.sales)}</td>
                           <td style={tdS("right","#8ab4cc")}>{fmtU(s.units)}</td>
                           <td style={tdS("right","#8ab4cc")}>{s.units>0?"$"+(s.sales/s.units).toFixed(2):"—"}</td>
@@ -1406,7 +1406,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
 
       {tab==="yoy"&&(
         <div>
-          <div style={{fontSize:10,color:"#2d3752",marginBottom:16}}>
+          <div style={{fontSize:13,color:"#2d3752",marginBottom:16}}>
             Showing <span style={{color:"#c8934a"}}>{FW_LABEL(latestFW)}</span> vs same week last year <span style={{color:"#c8934a"}}>{lyFW?"FW"+String(lyFW).slice(-2)+" FY25":"—"}</span>
           </div>
 
@@ -1431,8 +1431,8 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
             {/* By Product - YoY */}
             <div style={{background:"#ffffff",border:"1px solid #d8d3c9",borderRadius:10,overflow:"hidden"}}>
               <div style={{padding:"14px 16px",borderBottom:"1px solid #d8d3c9",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                <span style={{fontSize:10,color:"#2d3752",letterSpacing:1.5,textTransform:"uppercase"}}>By Product · YoY</span>
-                <select value={sortWow} onChange={e=>setSortWow(e.target.value)} style={{background:"#ede9e3",border:"1px solid #d8d3c9",color:"#2d3752",fontSize:9,borderRadius:4,padding:"3px 6px",fontFamily:"'DM Mono',monospace",cursor:"pointer"}}>
+                <span style={{fontSize:13,color:"#2d3752",letterSpacing:0.5,textTransform:"uppercase"}}>By Product · YoY</span>
+                <select value={sortWow} onChange={e=>setSortWow(e.target.value)} style={{background:"#ede9e3",border:"1px solid #d8d3c9",color:"#2d3752",fontSize:12,borderRadius:4,padding:"3px 6px",fontFamily:"'DM Sans',sans-serif",cursor:"pointer"}}>
                   <option value="sales">Sort: Sales</option>
                   <option value="yd">Sort: YoY $</option>
                   <option value="yp">Sort: YoY %</option>
@@ -1464,7 +1464,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
             {/* By DC - YoY */}
             <div style={{background:"#ffffff",border:"1px solid #d8d3c9",borderRadius:10,overflow:"hidden"}}>
               <div style={{padding:"14px 16px",borderBottom:"1px solid #d8d3c9"}}>
-                <span style={{fontSize:10,color:"#2d3752",letterSpacing:1.5,textTransform:"uppercase"}}>By DC · YoY</span>
+                <span style={{fontSize:13,color:"#2d3752",letterSpacing:0.5,textTransform:"uppercase"}}>By DC · YoY</span>
               </div>
               <div style={{overflowX:"auto"}}>
               <table style={{width:"100%",borderCollapse:"collapse"}}>
@@ -1474,7 +1474,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                     const isExp = expandedDC===r.dc;
                     return [
                       <tr key={r.dc} onClick={()=>setExpandedDC(isExp?null:r.dc)} style={{background:i%2===0?"#ffffff":"#f5f4f0",cursor:"pointer"}}>
-                        <td style={tdS()}><span style={{color:"#c8934a",marginRight:6,fontSize:9}}>{isExp?"▼":"▶"}</span>{r.dc}</td>
+                        <td style={tdS()}><span style={{color:"#c8934a",marginRight:6,fontSize:12}}>{isExp?"▼":"▶"}</span>{r.dc}</td>
                         <td style={tdS("right")}>{fmt$(r.sales)}</td>
                         <td style={tdS("right")}>{fmtU(r.units)}</td>
                         <td style={tdS("right")}>{r.aur!=null?"$"+r.aur.toFixed(2):"—"}</td>
@@ -1485,7 +1485,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                       </tr>,
                       isExp && storeTable.map((s,j)=>(
                         <tr key={r.dc+"-s-"+s.store} style={{background:"#f5f4f0"}}>
-                          <td style={{...tdS(),paddingLeft:28,color:"#2d3752",fontSize:10}}>Store {s.store}</td>
+                          <td style={{...tdS(),paddingLeft:28,color:"#2d3752",fontSize:13}}>Store {s.store}</td>
                           <td style={tdS("right","#8ab4cc")}>{fmt$(s.sales)}</td>
                           <td style={tdS("right","#8ab4cc")}>{fmtU(s.units)}</td>
                           <td style={tdS("right","#8ab4cc")}>{s.units>0?"$"+(s.sales/s.units).toFixed(2):"—"}</td>
@@ -1504,7 +1504,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
 
       {tab==="ytd"&&(
         <div>
-          <div style={{fontSize:10,color:"#2d3752",marginBottom:16}}>
+          <div style={{fontSize:13,color:"#2d3752",marginBottom:16}}>
             YTD: <span style={{color:"#c8934a"}}>{selFWSorted.length>0?FW_LABEL(selFWSorted[0])+" – "+FW_LABEL(selFWSorted[selFWSorted.length-1]):"—"}</span>
           </div>
 
@@ -1526,8 +1526,8 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
             {/* YTD by DC */}
             <div style={{background:"#ffffff",border:"1px solid #d8d3c9",borderRadius:10,overflow:"hidden"}}>
               <div style={{padding:"14px 16px",borderBottom:"1px solid #d8d3c9",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                <span style={{fontSize:10,color:"#2d3752",letterSpacing:1.5,textTransform:"uppercase"}}>YTD by DC</span>
-                <select value={sortYTDDC} onChange={e=>setSortYTDDC(e.target.value)} style={{background:"#ede9e3",border:"1px solid #d8d3c9",color:"#2d3752",fontSize:9,borderRadius:4,padding:"3px 6px",fontFamily:"'DM Mono',monospace",cursor:"pointer"}}>
+                <span style={{fontSize:13,color:"#2d3752",letterSpacing:0.5,textTransform:"uppercase"}}>YTD by DC</span>
+                <select value={sortYTDDC} onChange={e=>setSortYTDDC(e.target.value)} style={{background:"#ede9e3",border:"1px solid #d8d3c9",color:"#2d3752",fontSize:12,borderRadius:4,padding:"3px 6px",fontFamily:"'DM Sans',sans-serif",cursor:"pointer"}}>
                   <option value="s26">Sort: FY26 $</option>
                   <option value="delta">Sort: Δ $</option>
                   <option value="pct">Sort: Δ %</option>
@@ -1558,8 +1558,8 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
             {/* YTD by Product */}
             <div style={{background:"#ffffff",border:"1px solid #d8d3c9",borderRadius:10,overflow:"hidden"}}>
               <div style={{padding:"14px 16px",borderBottom:"1px solid #d8d3c9",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                <span style={{fontSize:10,color:"#2d3752",letterSpacing:1.5,textTransform:"uppercase"}}>YTD by Product</span>
-                <select value={sortYTDProd} onChange={e=>setSortYTDProd(e.target.value)} style={{background:"#ede9e3",border:"1px solid #d8d3c9",color:"#2d3752",fontSize:9,borderRadius:4,padding:"3px 6px",fontFamily:"'DM Mono',monospace",cursor:"pointer"}}>
+                <span style={{fontSize:13,color:"#2d3752",letterSpacing:0.5,textTransform:"uppercase"}}>YTD by Product</span>
+                <select value={sortYTDProd} onChange={e=>setSortYTDProd(e.target.value)} style={{background:"#ede9e3",border:"1px solid #d8d3c9",color:"#2d3752",fontSize:12,borderRadius:4,padding:"3px 6px",fontFamily:"'DM Sans',sans-serif",cursor:"pointer"}}>
                   <option value="s26">Sort: FY26 $</option>
                   <option value="delta">Sort: Δ $</option>
                   <option value="pct">Sort: Δ %</option>
@@ -1595,13 +1595,13 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
         <div>
           {/* Controls */}
           <div style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap",marginBottom:20}}>
-            <div style={{fontSize:10,color:"#2d3752"}}>METRIC:</div>
+            <div style={{fontSize:13,color:"#2d3752"}}>METRIC:</div>
             {[["sales","Gross Sales"],["units","Units"]].map(([k,l])=>(
-              <button key={k} onClick={()=>setTrendMetric(k)} style={{padding:"5px 14px",background:trendMetric===k?"#c8934a":"#ffffff",border:"1px solid "+(trendMetric===k?"#c8934a":"#d83a5a"),color:trendMetric===k?"#fff":"#5a8aaa",borderRadius:6,cursor:"pointer",fontSize:10,fontFamily:"DM Mono,monospace"}}>{l}</button>
+              <button key={k} onClick={()=>setTrendMetric(k)} style={{padding:"5px 14px",background:trendMetric===k?"#c8934a":"#ffffff",border:"1px solid "+(trendMetric===k?"#c8934a":"#d83a5a"),color:trendMetric===k?"#fff":"#5a8aaa",borderRadius:6,cursor:"pointer",fontSize:13,fontFamily:"DM Sans,sans-serif"}}>{l}</button>
             ))}
-            <div style={{marginLeft:16,fontSize:10,color:"#2d3752"}}>VIEW:</div>
+            <div style={{marginLeft:16,fontSize:13,color:"#2d3752"}}>VIEW:</div>
             {[["total","Total"],["bydc","By DC"],["yoy","FY26 vs FY25"]].map(([k,l])=>(
-              <button key={k} onClick={()=>setTrendView(k)} style={{padding:"5px 14px",background:trendView===k?"#1a7a4e":"#ffffff",border:"1px solid "+(trendView===k?"#1a7a4e":"#d8d3c9"),color:trendView===k?"#2aff90":"#5a8aaa",borderRadius:6,cursor:"pointer",fontSize:10,fontFamily:"DM Mono,monospace"}}>{l}</button>
+              <button key={k} onClick={()=>setTrendView(k)} style={{padding:"5px 14px",background:trendView===k?"#1a7a4e":"#ffffff",border:"1px solid "+(trendView===k?"#1a7a4e":"#d8d3c9"),color:trendView===k?"#2aff90":"#5a8aaa",borderRadius:6,cursor:"pointer",fontSize:13,fontFamily:"DM Sans,sans-serif"}}>{l}</button>
             ))}
           </div>
 
@@ -1647,7 +1647,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
 
             return (
               <div style={{background:"#ffffff",border:"1px solid #d8d3c9",borderRadius:10,padding:"20px 24px",marginBottom:20}}>
-                <div style={{fontSize:10,color:"#2d3752",letterSpacing:1.5,textTransform:"uppercase",marginBottom:12}}>
+                <div style={{fontSize:13,color:"#2d3752",letterSpacing:0.5,textTransform:"uppercase",marginBottom:12}}>
                   {trendMetric==="sales"?"Gross Sales":"Units"} — Weekly Trend {trendView==="bydc"?"by DC":trendView==="yoy"?"FY26 vs FY25":"All"}
                 </div>
                 <svg viewBox={"0 0 "+W+" "+H} style={{width:"100%",display:"block"}}>
@@ -1656,12 +1656,12 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                     const y=PT+yScale(v);
                     return [
                       <line key={"gl"+i} x1={PL} y1={y} x2={W-PR} y2={y} stroke="#d8d3c9" strokeWidth="1"/>,
-                      <text key={"yl"+i} x={PL-6} y={y+4} textAnchor="end" fontSize="9" fill="#3a6a8a" fontFamily="DM Mono,monospace">{fmtVal(v)}</text>
+                      <text key={"yl"+i} x={PL-6} y={y+4} textAnchor="end" fontSize="9" fill="#3a6a8a" fontFamily="DM Sans,sans-serif">{fmtVal(v)}</text>
                     ];
                   })}
                   {/* X labels */}
                   {trendData.map((d,i)=>(
-                    <text key={"xl"+i} x={PL+i*xStep} y={H-PT+4} textAnchor="middle" fontSize="9" fill="#3a6a8a" fontFamily="DM Mono,monospace">{d.label}</text>
+                    <text key={"xl"+i} x={PL+i*xStep} y={H-PT+4} textAnchor="middle" fontSize="9" fill="#3a6a8a" fontFamily="DM Sans,sans-serif">{d.label}</text>
                   ))}
                   {/* Series lines + dots */}
                   {series.map((s,si)=>{
@@ -1684,7 +1684,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                   {series.map(s=>(
                     <div key={s.label} style={{display:"flex",alignItems:"center",gap:6}}>
                       <div style={{width:24,height:3,background:s.color,borderRadius:2,borderTop:s.dash?"2px dashed "+s.color:"none",opacity:0.9}}/>
-                      <span style={{fontSize:10,color:"#2d3752",fontFamily:"DM Mono,monospace"}}>{s.label}</span>
+                      <span style={{fontSize:13,color:"#2d3752",fontFamily:"DM Sans,sans-serif"}}>{s.label}</span>
                     </div>
                   ))}
                 </div>
@@ -1695,7 +1695,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
           {/* Weekly data table beneath chart */}
           <div style={{background:"#ffffff",border:"1px solid #d8d3c9",borderRadius:10,overflow:"hidden"}}>
             <div style={{padding:"14px 16px",borderBottom:"1px solid #d8d3c9"}}>
-              <span style={{fontSize:10,color:"#2d3752",letterSpacing:1.5,textTransform:"uppercase"}}>Weekly Detail · FY26 vs FY25</span>
+              <span style={{fontSize:13,color:"#2d3752",letterSpacing:0.5,textTransform:"uppercase"}}>Weekly Detail · FY26 vs FY25</span>
             </div>
             <div style={{overflowX:"auto"}}>
             <table style={{width:"100%",borderCollapse:"collapse"}}>
@@ -1723,7 +1723,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                   const totD=totS26-totS25, totP=totS25>0?totD/totS25*100:null;
                   return (
                     <tr style={{background:"#ede9e3",borderTop:"2px solid #c8934a"}}>
-                      <td style={{...tdS(),fontWeight:700,color:"#0a0f1e",letterSpacing:1,fontSize:10}}>TOTAL</td>
+                      <td style={{...tdS(),fontWeight:700,color:"#0a0f1e",letterSpacing:0.2,fontSize:13}}>TOTAL</td>
                       <td style={{...tdS("right"),fontWeight:700,color:"#0a0f1e"}}>{fmt$(totS26)}</td>
                       <td style={{...tdS("right"),fontWeight:700,color:"#0a0f1e"}}>{fmtU(totU26)}</td>
                       <td style={{...tdS("right"),fontWeight:700,color:"#0a0f1e"}}>{fmt$(totS25)}</td>
@@ -1746,10 +1746,10 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
           <div style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap",marginBottom:20}}>
             <MultiSelect label="Week" options={ALL_FWS_FULL} selected={storeWkFilter} onChange={setStoreWkFilter} fmtOpt={FW_LABEL}/>
             <MultiSelect label="DC" options={ALL_DCS} selected={storeDCFilter} onChange={setStoreDCFilter}/>
-            <div style={{marginLeft:8,fontSize:10,color:"#2d3752"}}>SEARCH:</div>
-            <input value={storeSearch} onChange={e=>setStoreSearch(e.target.value)} placeholder="Store # or DC..." style={{background:"#ede9e3",border:"1px solid #d8d3c9",color:"#2d3752",fontSize:10,borderRadius:5,padding:"5px 10px",fontFamily:"DM Mono,monospace",width:160,outline:"none"}}/>
-            {storeSearch&&<button onClick={()=>setStoreSearch("")} style={{background:"transparent",border:"none",color:"#2d3752",cursor:"pointer",fontSize:12,padding:"2px 6px"}}>✕</button>}
-            <div style={{marginLeft:"auto",fontSize:9,color:"#2d3752"}}>{storeAnalytics.length} stores shown</div>
+            <div style={{marginLeft:8,fontSize:13,color:"#2d3752"}}>SEARCH:</div>
+            <input value={storeSearch} onChange={e=>setStoreSearch(e.target.value)} placeholder="Store # or DC..." style={{background:"#ede9e3",border:"1px solid #d8d3c9",color:"#2d3752",fontSize:13,borderRadius:5,padding:"5px 10px",fontFamily:"DM Sans,sans-serif",width:160,outline:"none"}}/>
+            {storeSearch&&<button onClick={()=>setStoreSearch("")} style={{background:"transparent",border:"none",color:"#2d3752",cursor:"pointer",fontSize:15,padding:"2px 6px"}}>✕</button>}
+            <div style={{marginLeft:"auto",fontSize:12,color:"#2d3752"}}>{storeAnalytics.length} stores shown</div>
           </div>
 
           {/* Store KPIs */}
@@ -1764,8 +1764,8 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
             {/* WoW Store Table */}
             <div style={{background:"#ffffff",border:"1px solid #d8d3c9",borderRadius:10,overflow:"hidden"}}>
               <div style={{padding:"14px 16px",borderBottom:"1px solid #d8d3c9",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                <span style={{fontSize:10,color:"#2d3752",letterSpacing:1.5,textTransform:"uppercase"}}>Store Detail · {storeWkFilter.length===1?FW_LABEL(storeWkFilter[0]):storeWkFilter.length+" Wks"} vs Prev Wk</span>
-                <select value={storeSortKey} onChange={e=>setStoreSortKey(e.target.value)} style={{background:"#ede9e3",border:"1px solid #d8d3c9",color:"#2d3752",fontSize:9,borderRadius:4,padding:"3px 6px",fontFamily:"'DM Mono',monospace",cursor:"pointer"}}>
+                <span style={{fontSize:13,color:"#2d3752",letterSpacing:0.5,textTransform:"uppercase"}}>Store Detail · {storeWkFilter.length===1?FW_LABEL(storeWkFilter[0]):storeWkFilter.length+" Wks"} vs Prev Wk</span>
+                <select value={storeSortKey} onChange={e=>setStoreSortKey(e.target.value)} style={{background:"#ede9e3",border:"1px solid #d8d3c9",color:"#2d3752",fontSize:12,borderRadius:4,padding:"3px 6px",fontFamily:"'DM Sans',sans-serif",cursor:"pointer"}}>
                   <option value="sales">Sort: Sales</option>
                   <option value="units">Sort: Units</option>
                   <option value="wd">Sort: WoW $</option>
@@ -1781,7 +1781,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                     <tr key={r.dc+"-"+r.store} style={{background:i%2===0?"#ffffff":"#f5f4f0"}}>
                       <td style={tdS()}>
                         <div style={{fontWeight:600}}>{"#"+r.store}</div>
-                        <div style={{fontSize:9,color:"#2d3752",marginTop:2}}>{STORE_META[r.store]?.name||""}</div>
+                        <div style={{fontSize:12,color:"#2d3752",marginTop:2}}>{STORE_META[r.store]?.name||""}</div>
                       </td>
                       <td style={tdS("left","#5a8aaa")}>{r.dc.replace("DC","").replace("CADC","").replace("TXDC","").replace("CODC","").replace("FLDC","").replace("AZDC","")}</td>
                       <td style={tdS("right")}>{fmt$(r.sales)}</td>
@@ -1805,12 +1805,12 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
               const DC_COLORS={"PHOENXAZDC":"#3a8fd4","DALLASTXDC":"#f5a623","FULRTNCADC":"#4ade80","ORLNDOFLDC":"#e879f9","DENVERCODC":"#60d9fa","UNCITYCADC":"#fb923c","FOURSEASON":"#a78bfa"};
               return (
                 <div style={{background:"#ffffff",border:"1px solid #d8d3c9",borderRadius:10,padding:"20px"}}>
-                  <div style={{fontSize:10,color:"#2d3752",letterSpacing:1.5,textTransform:"uppercase",marginBottom:16}}>Sales by DC · {storeWkFilter.length===1?FW_LABEL(storeWkFilter[0]):storeWkFilter.length+" Wks"}</div>
+                  <div style={{fontSize:13,color:"#2d3752",letterSpacing:0.5,textTransform:"uppercase",marginBottom:16}}>Sales by DC · {storeWkFilter.length===1?FW_LABEL(storeWkFilter[0]):storeWkFilter.length+" Wks"}</div>
                   {sorted.map(([dc,s])=>(
                     <div key={dc} style={{marginBottom:14}}>
                       <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
-                        <span style={{fontSize:10,color:"#2d3752",fontFamily:"DM Mono,monospace"}}>{dc}</span>
-                        <span style={{fontSize:10,color:"#0a0f1e",fontFamily:"DM Mono,monospace",fontWeight:600}}>{fmt$(s)}</span>
+                        <span style={{fontSize:13,color:"#2d3752",fontFamily:"DM Sans,sans-serif"}}>{dc}</span>
+                        <span style={{fontSize:13,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif",fontWeight:600}}>{fmt$(s)}</span>
                       </div>
                       <div style={{height:8,background:"#ede9e3",borderRadius:4,overflow:"hidden"}}>
                         <div style={{width:(s/maxDC*100)+"%",height:"100%",background:DC_COLORS[dc]||"#c8934a",borderRadius:4,transition:"width 0.4s"}}/>
@@ -1818,16 +1818,16 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                     </div>
                   ))}
                   <div style={{marginTop:20,borderTop:"1px solid #d8d3c9",paddingTop:16}}>
-                    <div style={{fontSize:10,color:"#2d3752",letterSpacing:1.5,textTransform:"uppercase",marginBottom:12}}>Top 5 Stores</div>
+                    <div style={{fontSize:13,color:"#2d3752",letterSpacing:0.5,textTransform:"uppercase",marginBottom:12}}>Top 5 Stores</div>
                     {storeAnalytics.slice(0,5).map((r,i)=>(
                       <div key={r.dc+r.store} style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
                         <div>
-                          <span style={{fontSize:11,color:"#c8934a",fontFamily:"DM Mono,monospace",fontWeight:600}}>{"#"+r.store}</span>
-                          <span style={{fontSize:9,color:"#3a5a7a",marginLeft:6}}>{r.dc}</span>
+                          <span style={{fontSize:14,color:"#c8934a",fontFamily:"DM Sans,sans-serif",fontWeight:600}}>{"#"+r.store}</span>
+                          <span style={{fontSize:12,color:"#3a5a7a",marginLeft:6}}>{r.dc}</span>
                         </div>
                         <div style={{textAlign:"right"}}>
-                          <div style={{fontSize:11,color:"#0a0f1e",fontFamily:"DM Mono,monospace"}}>{fmt$(r.sales)}</div>
-                          {r.wd!=null&&<div style={{fontSize:9,color:clr(r.wd),fontFamily:"DM Mono,monospace"}}>{fmtD(r.wd)}</div>}
+                          <div style={{fontSize:14,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif"}}>{fmt$(r.sales)}</div>
+                          {r.wd!=null&&<div style={{fontSize:12,color:clr(r.wd),fontFamily:"DM Sans,sans-serif"}}>{fmtD(r.wd)}</div>}
                         </div>
                       </div>
                     ))}
@@ -1840,10 +1840,10 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
           {/* By Product */}
           <div style={{background:"#ffffff",border:"1px solid #d8d3c9",borderRadius:10,overflow:"hidden"}}>
             <div style={{padding:"14px 16px",borderBottom:"1px solid #d8d3c9",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-              <span style={{fontSize:10,color:"#2d3752",letterSpacing:1.5,textTransform:"uppercase"}}>
+              <span style={{fontSize:13,color:"#2d3752",letterSpacing:0.5,textTransform:"uppercase"}}>
                 {(/^\d+$/.test(storeSearch)&&storeSearch?"By Product · Store "+storeSearch:"By Product · "+(storeWkFilter.length===1?FW_LABEL(storeWkFilter[0]):storeWkFilter.length+" Wks")+" · "+(storeDCFilter.length===ALL_DCS.length?"All DCs":storeDCFilter.length+" DCs"))}
               </span>
-              <span style={{fontSize:9,color:"#2d3752",fontFamily:"DM Mono,monospace"}}>{storeByProduct.length+" products"}</span>
+              <span style={{fontSize:12,color:"#2d3752",fontFamily:"DM Sans,sans-serif"}}>{storeByProduct.length+" products"}</span>
             </div>
             <div style={{overflowX:"auto",maxHeight:480,overflowY:"auto"}}>
             <table style={{width:"100%",borderCollapse:"collapse"}}>
@@ -1873,13 +1873,13 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
         <div>
           {/* Header row */}
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20,flexWrap:"wrap",gap:10}}>
-            <div style={{fontSize:10,color:"#2d3752"}}>
+            <div style={{fontSize:13,color:"#2d3752"}}>
               {FW_LABEL(selFWSorted[0])}–{FW_LABEL(selFWSorted[selFWSorted.length-1])} · {selFW.length} {selFW.length===1?"week":"weeks"} · FY26 vs FY25
             </div>
             <div style={{display:"flex",gap:8,alignItems:"center"}}>
-              <span style={{fontSize:9,color:"#2d3752"}}>SORT:</span>
+              <span style={{fontSize:12,color:"#2d3752"}}>SORT:</span>
               {[["s26","FY26 Sales"],["yoyD","YoY $"],["yoyP","YoY %"]].map(([k,l])=>(
-                <button key={k} onClick={()=>setDistrictSort(k)} style={{padding:"4px 12px",background:districtSort===k?"#c8934a":"#ffffff",border:"1px solid "+(districtSort===k?"#c8934a":"#d8d3c9"),color:districtSort===k?"#fff":"#5a8aaa",borderRadius:5,cursor:"pointer",fontSize:9,fontFamily:"DM Mono,monospace"}}>{l}</button>
+                <button key={k} onClick={()=>setDistrictSort(k)} style={{padding:"4px 12px",background:districtSort===k?"#c8934a":"#ffffff",border:"1px solid "+(districtSort===k?"#c8934a":"#d8d3c9"),color:districtSort===k?"#fff":"#5a8aaa",borderRadius:5,cursor:"pointer",fontSize:12,fontFamily:"DM Sans,sans-serif"}}>{l}</button>
               ))}
             </div>
           </div>
@@ -1910,13 +1910,13 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
               <div key={region} style={{background:"#ffffff",border:"1px solid #d8d3c9",borderRadius:10,overflow:"hidden",marginBottom:16}}>
                 {/* Region header */}
                 <div style={{padding:"12px 16px",background:"#ede9e3",borderBottom:"1px solid #d8d3c9",display:"flex",alignItems:"center",gap:16,flexWrap:"wrap"}}>
-                  <span style={{fontSize:12,fontWeight:700,color:"#0a0f1e",fontFamily:"DM Mono,monospace",letterSpacing:1.2,textTransform:"uppercase"}}>{region}</span>
-                  <span style={{fontSize:10,color:"#2d3752"}}>{rData.stores+" stores · "+rData.rows.length+" districts"}</span>
+                  <span style={{fontSize:15,fontWeight:700,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif",letterSpacing:0.3,textTransform:"uppercase"}}>{region}</span>
+                  <span style={{fontSize:13,color:"#2d3752"}}>{rData.stores+" stores · "+rData.rows.length+" districts"}</span>
                   <div style={{marginLeft:"auto",display:"flex",gap:20}}>
-                    <span style={{fontSize:11,color:"#0a0f1e",fontFamily:"DM Mono,monospace"}}>{fmt$(rData.s26)}</span>
-                    <span style={{fontSize:11,color:"#2d3752",fontFamily:"DM Mono,monospace"}}>{fmt$(rData.s25)}</span>
-                    <span style={{fontSize:11,fontWeight:600,color:clr(ryoyD),fontFamily:"DM Mono,monospace"}}>{fmtD(ryoyD)}</span>
-                    <span style={{fontSize:11,color:clr(ryoyP),fontFamily:"DM Mono,monospace"}}>{ryoyP!=null?fmtP(ryoyP):"—"}</span>
+                    <span style={{fontSize:14,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif"}}>{fmt$(rData.s26)}</span>
+                    <span style={{fontSize:14,color:"#2d3752",fontFamily:"DM Sans,sans-serif"}}>{fmt$(rData.s25)}</span>
+                    <span style={{fontSize:14,fontWeight:600,color:clr(ryoyD),fontFamily:"DM Sans,sans-serif"}}>{fmtD(ryoyD)}</span>
+                    <span style={{fontSize:14,color:clr(ryoyP),fontFamily:"DM Sans,sans-serif"}}>{ryoyP!=null?fmtP(ryoyP):"—"}</span>
                   </div>
                 </div>
                 {/* District rows */}
@@ -1960,9 +1960,9 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                           >
                             <td style={{padding:"10px 14px",borderBottom:"1px solid #d8d3c9"}}>
                               <div style={{display:"flex",alignItems:"center",gap:8}}>
-                                <span style={{fontSize:9,color:"#2d3752",width:10}}>{isExpanded?"▼":"▶"}</span>
+                                <span style={{fontSize:12,color:"#2d3752",width:10}}>{isExpanded?"▼":"▶"}</span>
                                 <div>
-                                  <div style={{fontSize:11,color:"#0a0f1e",fontFamily:"DM Mono,monospace"}}>{r.district}</div>
+                                  <div style={{fontSize:14,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif"}}>{r.district}</div>
                                   <div style={{marginTop:4,height:3,background:"#ede9e3",borderRadius:2,width:"100%"}}>
                                     <div style={{width:barW+"%",height:"100%",background:"#c8934a",borderRadius:2}}/>
                                   </div>
@@ -1970,8 +1970,8 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                               </div>
                             </td>
                             <td style={tdS("left","#0a0f1e")}>
-                              <div style={{fontSize:10}}>{DISTRICT_MANAGERS[r.district]||"—"}</div>
-                              <div style={{fontSize:8,color:"#2d3752",marginTop:1}}>District Director</div>
+                              <div style={{fontSize:13}}>{DISTRICT_MANAGERS[r.district]||"—"}</div>
+                              <div style={{fontSize:11,color:"#2d3752",marginTop:1}}>District Director</div>
                             </td>
                             <td style={tdS("right","#5a8aaa")}>{r.stores}</td>
                             <td style={tdS("right")}>{fmt$(r.s26)}</td>
@@ -2036,10 +2036,10 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                                 >
                                   <td style={{padding:"7px 14px 7px 38px",borderBottom:"1px solid #d8d3c9"}}>
                                     <div style={{display:"flex",alignItems:"center",gap:6}}>
-                                      <span style={{fontSize:8,color:"#2d3752",width:8}}>{isStoreExpanded?"▼":"▶"}</span>
+                                      <span style={{fontSize:11,color:"#2d3752",width:8}}>{isStoreExpanded?"▼":"▶"}</span>
                                       <div>
-                                        <div style={{fontSize:11,fontWeight:600,color:"#c8934a",fontFamily:"DM Mono,monospace"}}>{"#"+sr.store}</div>
-                                        <div style={{fontSize:9,color:"#3a5a7a",marginTop:1}}>{STORE_META[sr.store]?.name||""}</div>
+                                        <div style={{fontSize:14,fontWeight:600,color:"#c8934a",fontFamily:"DM Sans,sans-serif"}}>{"#"+sr.store}</div>
+                                        <div style={{fontSize:12,color:"#3a5a7a",marginTop:1}}>{STORE_META[sr.store]?.name||""}</div>
                                       </div>
                                     </div>
                                   </td>
@@ -2054,15 +2054,15 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                                 </tr>
                                 {isStoreExpanded&&prodRows.map((pr,pi)=>(
                                   <tr key={pr.prod} style={{background:"#f5f4f0"}}>
-                                    <td style={{padding:"6px 14px 6px 62px",borderBottom:"1px solid #d8d3c9",fontSize:10,color:"#2d3752",fontFamily:"DM Mono,monospace"}}>{pr.prod}</td>
-                                    <td style={{...tdS("left","#2d3752"),background:"#f5f4f0",fontSize:10}}>—</td>
-                                    <td style={{...tdS("right","#2a4a6a"),background:"#f5f4f0",fontSize:10}}>—</td>
-                                    <td style={{...tdS("right","#a0c4dc"),background:"#f5f4f0",fontSize:10}}>{fmt$(pr.s26)}</td>
-                                    <td style={{...tdS("right","#a0c4dc"),background:"#f5f4f0",fontSize:10}}>{fmtU(pr.u26)}</td>
-                                    <td style={{...tdS("right","#a0c4dc"),background:"#f5f4f0",fontSize:10}}>{pr.aur!=null?"$"+pr.aur.toFixed(2):"—"}</td>
-                                    <td style={{...tdS("right","#5a7a9a"),background:"#f5f4f0",fontSize:10}}>{pr.s25>0?fmt$(pr.s25):"—"}</td>
-                                    <td style={{...tdS("right",clr(pr.yoyD)),background:"#f5f4f0",fontSize:10}}>{pr.s25>0?fmtD(pr.yoyD):"NEW"}</td>
-                                    <td style={{...tdS("right",clr(pr.yoyP)),background:"#f5f4f0",fontSize:10}}>{pr.yoyP!=null?fmtP(pr.yoyP):"—"}</td>
+                                    <td style={{padding:"6px 14px 6px 62px",borderBottom:"1px solid #d8d3c9",fontSize:13,color:"#2d3752",fontFamily:"DM Sans,sans-serif"}}>{pr.prod}</td>
+                                    <td style={{...tdS("left","#2d3752"),background:"#f5f4f0",fontSize:13}}>—</td>
+                                    <td style={{...tdS("right","#2a4a6a"),background:"#f5f4f0",fontSize:13}}>—</td>
+                                    <td style={{...tdS("right","#a0c4dc"),background:"#f5f4f0",fontSize:13}}>{fmt$(pr.s26)}</td>
+                                    <td style={{...tdS("right","#a0c4dc"),background:"#f5f4f0",fontSize:13}}>{fmtU(pr.u26)}</td>
+                                    <td style={{...tdS("right","#a0c4dc"),background:"#f5f4f0",fontSize:13}}>{pr.aur!=null?"$"+pr.aur.toFixed(2):"—"}</td>
+                                    <td style={{...tdS("right","#5a7a9a"),background:"#f5f4f0",fontSize:13}}>{pr.s25>0?fmt$(pr.s25):"—"}</td>
+                                    <td style={{...tdS("right",clr(pr.yoyD)),background:"#f5f4f0",fontSize:13}}>{pr.s25>0?fmtD(pr.yoyD):"NEW"}</td>
+                                    <td style={{...tdS("right",clr(pr.yoyP)),background:"#f5f4f0",fontSize:13}}>{pr.yoyP!=null?fmtP(pr.yoyP):"—"}</td>
                                   </tr>
                                 ))}
                               </React.Fragment>
@@ -2073,7 +2073,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                     })}
                     {/* Region subtotal */}
                     <tr style={{background:"#ede9e3",borderTop:"1px solid #d8d3c9"}}>
-                      <td style={{padding:"10px 14px",fontSize:10,color:"#c8934a",fontFamily:"DM Mono,monospace",fontWeight:700,letterSpacing:1}}>{region+" TOTAL"}</td>
+                      <td style={{padding:"10px 14px",fontSize:13,color:"#c8934a",fontFamily:"DM Sans,sans-serif",fontWeight:700,letterSpacing:0.2}}>{region+" TOTAL"}</td>
                       <td style={tdS("left","#2a4a6a")}>—</td>
                       <td style={tdS("right","#c8934a")}>{rData.stores}</td>
                       <td style={tdS("right","#c8934a")}>{fmt$(rData.s26)}</td>
@@ -2095,49 +2095,49 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
         <div>
           {/* Alloc controls — Row 1: Baseline */}
           <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap",marginBottom:isMobile?8:10}}>
-            <div style={{fontSize:9,color:"#2d3752",letterSpacing:1,minWidth:isMobile?0:60}}>BASELINE:</div>
+            <div style={{fontSize:12,color:"#2d3752",letterSpacing:0.2,minWidth:isMobile?0:60}}>BASELINE:</div>
             {[["last4","Last 4 Wks"],["last8","Last 8 Wks"],["ytd","Full YTD"],["custom","Custom"]].map(([k,l])=>(
-              <button key={k} onClick={()=>setAllocBaseline(k)} style={{padding:isMobile?"4px 10px":"5px 14px",background:allocBaseline===k?"#7c3aed":"#ffffff",border:"1px solid "+(allocBaseline===k?"#7c3aed":"#d8d3c9"),color:allocBaseline===k?"#fff":"#5a8aaa",borderRadius:6,cursor:"pointer",fontSize:isMobile?9:10,fontFamily:"DM Mono,monospace",whiteSpace:"nowrap"}}>{l}</button>
+              <button key={k} onClick={()=>setAllocBaseline(k)} style={{padding:isMobile?"4px 10px":"5px 14px",background:allocBaseline===k?"#7c3aed":"#ffffff",border:"1px solid "+(allocBaseline===k?"#7c3aed":"#d8d3c9"),color:allocBaseline===k?"#fff":"#5a8aaa",borderRadius:6,cursor:"pointer",fontSize:isMobile?9:10,fontFamily:"DM Sans,sans-serif",whiteSpace:"nowrap"}}>{l}</button>
             ))}
             {allocBaseline==="custom"&&(
               <>
-                <div style={{fontSize:9,color:"#2d3752"}}>FROM:</div>
-                <select value={allocCustomFrom} onChange={e=>setAllocCustomFrom(Number(e.target.value))} style={{background:"#ede9e3",border:"1px solid #7c3aed",color:"#2d3752",fontSize:9,borderRadius:5,padding:"4px 8px",fontFamily:"DM Mono,monospace"}}>
+                <div style={{fontSize:12,color:"#2d3752"}}>FROM:</div>
+                <select value={allocCustomFrom} onChange={e=>setAllocCustomFrom(Number(e.target.value))} style={{background:"#ede9e3",border:"1px solid #7c3aed",color:"#2d3752",fontSize:12,borderRadius:5,padding:"4px 8px",fontFamily:"DM Sans,sans-serif"}}>
                   {ALL_FWS_FULL.map(fw=><option key={fw} value={fw}>{"FW"+String(fw).slice(-2)}</option>)}
                 </select>
-                <div style={{fontSize:9,color:"#2d3752"}}>TO:</div>
-                <select value={allocCustomTo} onChange={e=>setAllocCustomTo(Number(e.target.value))} style={{background:"#ede9e3",border:"1px solid #7c3aed",color:"#2d3752",fontSize:9,borderRadius:5,padding:"4px 8px",fontFamily:"DM Mono,monospace"}}>
+                <div style={{fontSize:12,color:"#2d3752"}}>TO:</div>
+                <select value={allocCustomTo} onChange={e=>setAllocCustomTo(Number(e.target.value))} style={{background:"#ede9e3",border:"1px solid #7c3aed",color:"#2d3752",fontSize:12,borderRadius:5,padding:"4px 8px",fontFamily:"DM Sans,sans-serif"}}>
                   {ALL_FWS_FULL.filter(fw=>fw>=allocCustomFrom).map(fw=><option key={fw} value={fw}>{"FW"+String(fw).slice(-2)}</option>)}
                 </select>
-                <div style={{fontSize:9,color:"#7c3aed",fontFamily:"DM Mono,monospace"}}>{allocFWs.length+" wks"}</div>
+                <div style={{fontSize:12,color:"#7c3aed",fontFamily:"DM Sans,sans-serif"}}>{allocFWs.length+" wks"}</div>
               </>
             )}
           </div>
 
           {/* Alloc controls — Row 2: Category, DC, Store */}
           <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap",marginBottom:isMobile?8:10}}>
-            <div style={{fontSize:9,color:"#2d3752",letterSpacing:1}}>CATEGORY:</div>
+            <div style={{fontSize:12,color:"#2d3752",letterSpacing:0.2}}>CATEGORY:</div>
             <MultiSelect label="Cat" options={ALLOC_CATEGORIES.map(c=>c.key)} selected={allocCategory} onChange={setAllocCategory} fmtOpt={k=>{const c=ALLOC_CATEGORIES.find(x=>x.key===k);return c?c.label:k;}} />
-            <div style={{fontSize:9,color:"#2d3752",letterSpacing:1,marginLeft:isMobile?0:8}}>DC:</div>
+            <div style={{fontSize:12,color:"#2d3752",letterSpacing:0.2,marginLeft:isMobile?0:8}}>DC:</div>
             <MultiSelect label="DC" options={ALL_DCS} selected={allocDC} onChange={setAllocDC}/>
-            <div style={{fontSize:9,color:"#2d3752",letterSpacing:1,marginLeft:isMobile?0:8}}>STORE:</div>
-            <input value={allocSearch} onChange={e=>setAllocSearch(e.target.value)} placeholder="Search store #..." style={{background:"#ede9e3",border:"1px solid #d8d3c9",color:"#2d3752",fontSize:9,borderRadius:5,padding:"4px 8px",fontFamily:"DM Mono,monospace",width:isMobile?110:140,outline:"none"}}/>
-            {allocSearch&&<button onClick={()=>setAllocSearch("")} style={{background:"transparent",border:"none",color:"#2d3752",cursor:"pointer",fontSize:12,padding:"2px 4px"}}>✕</button>}
+            <div style={{fontSize:12,color:"#2d3752",letterSpacing:0.2,marginLeft:isMobile?0:8}}>STORE:</div>
+            <input value={allocSearch} onChange={e=>setAllocSearch(e.target.value)} placeholder="Search store #..." style={{background:"#ede9e3",border:"1px solid #d8d3c9",color:"#2d3752",fontSize:12,borderRadius:5,padding:"4px 8px",fontFamily:"DM Sans,sans-serif",width:isMobile?110:140,outline:"none"}}/>
+            {allocSearch&&<button onClick={()=>setAllocSearch("")} style={{background:"transparent",border:"none",color:"#2d3752",cursor:"pointer",fontSize:15,padding:"2px 4px"}}>✕</button>}
           </div>
 
           {/* Alloc controls — Row 3: Inbound date + Download */}
           <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap",marginBottom:isMobile?12:20}}>
-            <div style={{fontSize:9,color:"#2d3752",letterSpacing:1}}>INBOUND DATE:</div>
+            <div style={{fontSize:12,color:"#2d3752",letterSpacing:0.2}}>INBOUND DATE:</div>
             <input
               type="text"
               value={exportDate}
               onChange={e=>setExportDate(e.target.value)}
               placeholder="YYYYMMDD"
-              style={{background:"#ede9e3",border:"1px solid #d8d3c9",color:"#2d3752",fontSize:9,borderRadius:5,padding:"4px 8px",fontFamily:"DM Mono,monospace",width:90,outline:"none",textAlign:"center"}}
+              style={{background:"#ede9e3",border:"1px solid #d8d3c9",color:"#2d3752",fontSize:12,borderRadius:5,padding:"4px 8px",fontFamily:"DM Sans,sans-serif",width:90,outline:"none",textAlign:"center"}}
             />
             <button
               onClick={exportAllocation}
-              style={{padding:isMobile?"5px 10px":"6px 14px",background:"linear-gradient(135deg,#4ade80,#22c55e)",border:"none",borderRadius:6,color:"#000",fontSize:isMobile?9:10,fontWeight:700,letterSpacing:1,cursor:"pointer",fontFamily:"DM Mono,monospace",display:"flex",alignItems:"center",gap:6,whiteSpace:"nowrap"}}
+              style={{padding:isMobile?"5px 10px":"6px 14px",background:"linear-gradient(135deg,#4ade80,#22c55e)",border:"none",borderRadius:6,color:"#000",fontSize:isMobile?9:10,fontWeight:700,letterSpacing:0.2,cursor:"pointer",fontFamily:"DM Sans,sans-serif",display:"flex",alignItems:"center",gap:6,whiteSpace:"nowrap"}}
             >
               ⬇ Download Allocation
             </button>
@@ -2147,8 +2147,8 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
           <div style={{display:"flex",gap:isMobile?8:16,marginBottom:16,flexWrap:"wrap"}}>
             {[["🚩","#6b7280","Insufficient Data"],["🔴","#f87171","Skip (0 cases)"],["🟢","#4ade80","Standard (+1)"],["🟡","#f5a623",isMobile?"Watch (+1)":"Watch (+1, approaching high)"],["🌀","#a3e635",isMobile?"Trending (+2)":"Trending (+2, 2 of 3 wks high)"],["🔵","#60d9fa","High Performer (+2)"]].map(([icon,color,label])=>(
               <div key={label} style={{display:"flex",alignItems:"center",gap:4}}>
-                <span style={{fontSize:10}}>{icon}</span>
-                <span style={{fontSize:9,color,fontFamily:"DM Mono,monospace"}}>{label}</span>
+                <span style={{fontSize:13}}>{icon}</span>
+                <span style={{fontSize:12,color,fontFamily:"DM Sans,sans-serif"}}>{label}</span>
               </div>
             ))}
           </div>
@@ -2156,10 +2156,10 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
           {/* Main table */}
           <div style={{background:"#ffffff",border:"1px solid #d8d3c9",borderRadius:10,overflow:"hidden"}}>
             <div style={{padding:"14px 16px",borderBottom:"1px solid #d8d3c9",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-              <span style={{fontSize:10,color:"#7c3aed",letterSpacing:1.5,textTransform:"uppercase"}}>
+              <span style={{fontSize:13,color:"#7c3aed",letterSpacing:0.5,textTransform:"uppercase"}}>
                 {(()=>{const labels=allocCategory.map(k=>{const c=ALLOC_CATEGORIES.find(x=>x.key===k);return c?c.label:k;});return labels.join(" + ")+" Allocation · "+allocFWs.length+" Wk Baseline";})()}
               </span>
-              <span style={{fontSize:9,color:"#2d3752",fontFamily:"DM Mono,monospace"}}>{(()=>{if(!allocSearch.trim()) return allocData.length+" stores"; const n=/^\d+$/.test(allocSearch.trim()); return allocData.filter(r=>n?r.store===allocSearch.trim():(STORE_META[r.store]?.name||"").toLowerCase().includes(allocSearch.toLowerCase())).length+" stores";})()}</span>
+              <span style={{fontSize:12,color:"#2d3752",fontFamily:"DM Sans,sans-serif"}}>{(()=>{if(!allocSearch.trim()) return allocData.length+" stores"; const n=/^\d+$/.test(allocSearch.trim()); return allocData.filter(r=>n?r.store===allocSearch.trim():(STORE_META[r.store]?.name||"").toLowerCase().includes(allocSearch.toLowerCase())).length+" stores";})()}</span>
             </div>
             {/* DC Rec Cases Summary */}
             {(()=>{
@@ -2171,14 +2171,14 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
               if(entries.length===0) return null;
               return (
                 <div style={{padding:"10px 16px",borderBottom:"1px solid #d8d3c9",display:"flex",flexWrap:"wrap",gap:8,alignItems:"center"}}>
-                  <span style={{fontSize:9,color:"#2d3752",fontFamily:"DM Mono,monospace",letterSpacing:1.2,textTransform:"uppercase",marginRight:4}}>Rec. Cases by DC:</span>
+                  <span style={{fontSize:12,color:"#2d3752",fontFamily:"DM Sans,sans-serif",letterSpacing:0.3,textTransform:"uppercase",marginRight:4}}>Rec. Cases by DC:</span>
                   {entries.map(function(entry){var dc=entry.dc; var cases=entry.cases; var st=entry.st; var stColor=st==null?"#5a8aaa":st>=80?"#4ade80":st>=60?"#f5a623":"#f87171"; return (
-                    <span key={dc} style={{fontSize:10,fontFamily:"DM Mono,monospace",background:"#ede9e3",border:"1px solid #d8d3c9",borderRadius:5,padding:"4px 10px",color:"#c8934a",display:"inline-flex",flexDirection:"column",gap:1}}>
+                    <span key={dc} style={{fontSize:13,fontFamily:"DM Sans,sans-serif",background:"#ede9e3",border:"1px solid #d8d3c9",borderRadius:5,padding:"4px 10px",color:"#c8934a",display:"inline-flex",flexDirection:"column",gap:1}}>
                       <span><span style={{color:"#2d3752"}}>{dc}:</span>{" "}<span style={{color:"#4ade80",fontWeight:700}}>{cases}</span>{" cases"}</span>
-                      <span style={{fontSize:9,color:stColor,fontFamily:"DM Mono,monospace"}}>{"ST%: "+(st!=null?st.toFixed(0)+"%":"—")}</span>
+                      <span style={{fontSize:12,color:stColor,fontFamily:"DM Sans,sans-serif"}}>{"ST%: "+(st!=null?st.toFixed(0)+"%":"—")}</span>
                     </span>
                   );})}
-                  <span style={{marginLeft:"auto",fontSize:10,fontFamily:"DM Mono,monospace",color:"#7c3aed",fontWeight:700}}>
+                  <span style={{marginLeft:"auto",fontSize:13,fontFamily:"DM Sans,sans-serif",color:"#7c3aed",fontWeight:700}}>
                     {"Total: "+entries.reduce((a,e)=>a+e.cases,0)+" cases"}
                   </span>
                 </div>
@@ -2189,7 +2189,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
               <thead>
                 <tr style={{background:"#ede9e3"}}>
                   {["Store","DC",...(allocCategory.length>1?["Category"]:[]),"Avg Wkly Sales",...(isMobile?[]:["Pieces Sold","Pieces Rcvd"]),"Store ST%",...(isMobile?[]:["Consec. High Wks","Current Cases"]),"Rec. Cases","Status"].map(h=>(
-                    <th key={h} style={{padding:isMobile?"8px 8px":"10px 14px",textAlign:h==="Store"||h==="DC"||h==="Status"?"left":"right",fontSize:9,color:"#2d3752",fontFamily:"DM Mono,monospace",letterSpacing:0.8,textTransform:"uppercase",borderBottom:"1px solid #d8d3c9",whiteSpace:"nowrap"}}>{h}</th>
+                    <th key={h} style={{padding:isMobile?"8px 8px":"10px 14px",textAlign:h==="Store"||h==="DC"||h==="Status"?"left":"right",fontSize:12,color:"#2d3752",fontFamily:"DM Sans,sans-serif",letterSpacing:0.8,textTransform:"uppercase",borderBottom:"1px solid #d8d3c9",whiteSpace:"nowrap"}}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -2220,22 +2220,22 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                       rowIdx++;
                       rows.push(
                         <tr key={dc+"-"+r.store+"-"+(r.catKey||"")} style={{background:bg}}>
-                          <td style={{padding:cellP,fontSize:isMobile?10:11,color:"#0a0f1e",fontFamily:"DM Mono,monospace",borderBottom:"1px solid #d8d3c9"}}>
+                          <td style={{padding:cellP,fontSize:isMobile?10:11,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif",borderBottom:"1px solid #d8d3c9"}}>
                             <div style={{fontWeight:600}}>{"#"+r.store}</div>
-                            <div style={{fontSize:8,color:"#3a5a7a",marginTop:2}}>{STORE_META[r.store]?.name||""}</div>
+                            <div style={{fontSize:11,color:"#3a5a7a",marginTop:2}}>{STORE_META[r.store]?.name||""}</div>
                           </td>
-                          <td style={{padding:cellP,fontSize:isMobile?9:10,color:"#2d3752",fontFamily:"DM Mono,monospace",borderBottom:"1px solid #d8d3c9",whiteSpace:"nowrap"}}>{isMobile?dc.replace("DC","").replace("TXDC","TX").replace("CADC","CA").replace("CODC","CO").replace("FLDC","FL").replace("AZDC","AZ"):dc}</td>
-                          {allocCategory.length>1&&<td style={{padding:cellP,fontSize:isMobile?9:10,color:"#a78bfa",fontFamily:"DM Mono,monospace",borderBottom:"1px solid #d8d3c9"}}>{r.catLabel||r.catKey||""}</td>}
-                          <td style={{padding:cellP,textAlign:"right",fontSize:isMobile?10:11,color:"#0a0f1e",fontFamily:"DM Mono,monospace",borderBottom:"1px solid #d8d3c9"}}>{isInsuff?"—":"$"+r.avgSales.toLocaleString("en-US",{minimumFractionDigits:0,maximumFractionDigits:0})}</td>
+                          <td style={{padding:cellP,fontSize:isMobile?9:10,color:"#2d3752",fontFamily:"DM Sans,sans-serif",borderBottom:"1px solid #d8d3c9",whiteSpace:"nowrap"}}>{isMobile?dc.replace("DC","").replace("TXDC","TX").replace("CADC","CA").replace("CODC","CO").replace("FLDC","FL").replace("AZDC","AZ"):dc}</td>
+                          {allocCategory.length>1&&<td style={{padding:cellP,fontSize:isMobile?9:10,color:"#a78bfa",fontFamily:"DM Sans,sans-serif",borderBottom:"1px solid #d8d3c9"}}>{r.catLabel||r.catKey||""}</td>}
+                          <td style={{padding:cellP,textAlign:"right",fontSize:isMobile?10:11,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif",borderBottom:"1px solid #d8d3c9"}}>{isInsuff?"—":"$"+r.avgSales.toLocaleString("en-US",{minimumFractionDigits:0,maximumFractionDigits:0})}</td>
                           {!isMobile&&<td style={{padding:cellP,textAlign:"right",borderBottom:"1px solid #d8d3c9"}}>
-                            <div style={{fontSize:11,color:"#0a0f1e",fontFamily:"DM Mono,monospace",fontWeight:600}}>{isInsuff?"—":r.piecesReceived>0?r.piecesSold.toLocaleString():"—"}</div>
-                            <div style={{fontSize:8,color:"#2d3752",fontFamily:"DM Mono,monospace",marginTop:1}}>est.</div>
+                            <div style={{fontSize:14,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif",fontWeight:600}}>{isInsuff?"—":r.piecesReceived>0?r.piecesSold.toLocaleString():"—"}</div>
+                            <div style={{fontSize:11,color:"#2d3752",fontFamily:"DM Sans,sans-serif",marginTop:1}}>est.</div>
                           </td>}
                           {!isMobile&&<td style={{padding:cellP,textAlign:"right",borderBottom:"1px solid #d8d3c9"}}>
-                            {isInsuff ? <span style={{color:"#3a5a7a",fontFamily:"DM Mono,monospace",fontSize:11}}>—</span> : (
+                            {isInsuff ? <span style={{color:"#3a5a7a",fontFamily:"DM Sans,sans-serif",fontSize:14}}>—</span> : (
                               <div>
-                                <div style={{fontSize:11,color:"#0a0f1e",fontFamily:"DM Mono,monospace",fontWeight:600}}>{r.piecesReceived>0?r.piecesReceived.toLocaleString():"—"}</div>
-                                <div style={{fontSize:8,color:"#2d3752",fontFamily:"DM Mono,monospace",marginTop:1}}>{r.casesReceived>0?r.casesReceived+" cases":""}</div>
+                                <div style={{fontSize:14,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif",fontWeight:600}}>{r.piecesReceived>0?r.piecesReceived.toLocaleString():"—"}</div>
+                                <div style={{fontSize:11,color:"#2d3752",fontFamily:"DM Sans,sans-serif",marginTop:1}}>{r.casesReceived>0?r.casesReceived+" cases":""}</div>
                               </div>
                             )}
                           </td>}
@@ -2243,14 +2243,14 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                             {(()=>{
                               const storeST = (!isInsuff&&r.piecesReceived>0) ? r.piecesSold/r.piecesReceived*100 : null;
                               return storeST!=null
-                                ? <div style={{fontSize:isMobile?10:11,color:stClr(storeST),fontFamily:"DM Mono,monospace",fontWeight:600}}>{storeST.toFixed(1)+"%"}</div>
-                                : <span style={{color:"#3a5a7a",fontFamily:"DM Mono,monospace",fontSize:11}}>—</span>;
+                                ? <div style={{fontSize:isMobile?10:11,color:stClr(storeST),fontFamily:"DM Sans,sans-serif",fontWeight:600}}>{storeST.toFixed(1)+"%"}</div>
+                                : <span style={{color:"#3a5a7a",fontFamily:"DM Sans,sans-serif",fontSize:14}}>—</span>;
                             })()}
                           </td>
-                          {!isMobile&&<td style={{padding:cellP,textAlign:"right",fontSize:11,color:"#0a0f1e",fontFamily:"DM Mono,monospace",borderBottom:"1px solid #d8d3c9"}}>{isInsuff||r.consecHigh===0?"—":r.consecHigh}</td>}
-                          {!isMobile&&<td style={{padding:cellP,textAlign:"right",fontSize:11,color:"#0a0f1e",fontFamily:"DM Mono,monospace",borderBottom:"1px solid #d8d3c9"}}>{isInsuff?"—":r.currentCases}</td>}
-                          <td style={{padding:cellP,textAlign:"right",fontSize:isMobile?12:13,fontWeight:700,color:isInsuff?"#3a5a7a":statusColor,fontFamily:"DM Mono,monospace",borderBottom:"1px solid #d8d3c9"}}>{isInsuff?"—":r.recCases}</td>
-                          <td style={{padding:cellP,fontSize:isMobile?9:10,color:statusColor,fontFamily:"DM Mono,monospace",borderBottom:"1px solid #d8d3c9",whiteSpace:"nowrap"}}>{statusIcon+" "+(isMobile?(isInsuff?"Insuff.":r.status==="skip"?"Skip":r.status==="high"?"High":r.status==="trending"?"Trending":r.status==="watch"?"Watch":"Std"):statusLabel)}</td>
+                          {!isMobile&&<td style={{padding:cellP,textAlign:"right",fontSize:14,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif",borderBottom:"1px solid #d8d3c9"}}>{isInsuff||r.consecHigh===0?"—":r.consecHigh}</td>}
+                          {!isMobile&&<td style={{padding:cellP,textAlign:"right",fontSize:14,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif",borderBottom:"1px solid #d8d3c9"}}>{isInsuff?"—":r.currentCases}</td>}
+                          <td style={{padding:cellP,textAlign:"right",fontSize:isMobile?12:13,fontWeight:700,color:isInsuff?"#3a5a7a":statusColor,fontFamily:"DM Sans,sans-serif",borderBottom:"1px solid #d8d3c9"}}>{isInsuff?"—":r.recCases}</td>
+                          <td style={{padding:cellP,fontSize:isMobile?9:10,color:statusColor,fontFamily:"DM Sans,sans-serif",borderBottom:"1px solid #d8d3c9",whiteSpace:"nowrap"}}>{statusIcon+" "+(isMobile?(isInsuff?"Insuff.":r.status==="skip"?"Skip":r.status==="high"?"High":r.status==="trending"?"Trending":r.status==="watch"?"Watch":"Std"):statusLabel)}</td>
                         </tr>
                       );
                     });
@@ -2258,9 +2258,9 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                     // DC subtotal row
                     rows.push(
                       <tr key={dc+"-subtotal"} style={{background:"#ede9e3",borderTop:"1px solid #d8d3c9"}}>
-                        <td colSpan={subtotalCols} style={{padding:"8px 14px",fontSize:10,color:"#7c3aed",fontFamily:"DM Mono,monospace",letterSpacing:1,fontWeight:600}}>{dc+" SUBTOTAL · "+dcRows.length+" stores"}</td>
-                        <td style={{padding:"8px 14px",textAlign:"right",fontSize:13,fontWeight:700,color:"#7c3aed",fontFamily:"DM Mono,monospace"}}>{dcTotal}</td>
-                        <td style={{padding:"8px 14px",fontSize:9,color:"#3a5a7a",fontFamily:"DM Mono,monospace"}}>{"cases"}</td>
+                        <td colSpan={subtotalCols} style={{padding:"8px 14px",fontSize:13,color:"#7c3aed",fontFamily:"DM Sans,sans-serif",letterSpacing:0.2,fontWeight:600}}>{dc+" SUBTOTAL · "+dcRows.length+" stores"}</td>
+                        <td style={{padding:"8px 14px",textAlign:"right",fontSize:15,fontWeight:700,color:"#7c3aed",fontFamily:"DM Sans,sans-serif"}}>{dcTotal}</td>
+                        <td style={{padding:"8px 14px",fontSize:12,color:"#3a5a7a",fontFamily:"DM Sans,sans-serif"}}>{"cases"}</td>
                       </tr>
                     );
                     rowIdx=0;
@@ -2269,9 +2269,9 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                   // Grand total row
                   rows.push(
                     <tr key="grand-total" style={{background:"#ede9e3",borderTop:"2px solid #7c3aed"}}>
-                      <td colSpan={subtotalCols} style={{padding:"12px 14px",fontSize:11,color:"#0a0f1e",fontFamily:"DM Mono,monospace",letterSpacing:1.5,fontWeight:700,textTransform:"uppercase"}}>{"Grand Total · "+allocData.length+" stores"}</td>
-                      <td style={{padding:"12px 14px",textAlign:"right",fontSize:16,fontWeight:700,color:"#0a0f1e",fontFamily:"DM Mono,monospace"}}>{grandTotal}</td>
-                      <td style={{padding:"12px 14px",fontSize:10,color:"#2d3752",fontFamily:"DM Mono,monospace"}}>{"total cases"}</td>
+                      <td colSpan={subtotalCols} style={{padding:"12px 14px",fontSize:14,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif",letterSpacing:0.5,fontWeight:700,textTransform:"uppercase"}}>{"Grand Total · "+allocData.length+" stores"}</td>
+                      <td style={{padding:"12px 14px",textAlign:"right",fontSize:17,fontWeight:700,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif"}}>{grandTotal}</td>
+                      <td style={{padding:"12px 14px",fontSize:13,color:"#2d3752",fontFamily:"DM Sans,sans-serif"}}>{"total cases"}</td>
                     </tr>
                   );
 
@@ -2283,7 +2283,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
           </div>
 
           {/* Info footer */}
-          <div style={{marginTop:14,fontSize:9,color:"#2d3752",fontFamily:"DM Mono,monospace",lineHeight:1.8}}>
+          <div style={{marginTop:14,fontSize:12,color:"#2d3752",fontFamily:"DM Sans,sans-serif",lineHeight:1.8}}>
             <span style={{marginRight:20}}>SAFETY BUFFER: 15%</span>
             <span style={{marginRight:20}}>STANDARD FLOOR: 60%</span>
             <span style={{marginRight:20}}>HIGH ST THRESHOLD: 85%</span>
@@ -2295,7 +2295,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
 
           {/* Delivery Matrix */}
           <div style={{marginTop:28}}>
-            <div style={{fontSize:10,color:"#7c3aed",letterSpacing:1.5,textTransform:"uppercase",marginBottom:12,fontFamily:"DM Mono,monospace"}}>
+            <div style={{fontSize:13,color:"#7c3aed",letterSpacing:0.5,textTransform:"uppercase",marginBottom:12,fontFamily:"DM Sans,sans-serif"}}>
               {allocSearch.trim() ? "Cases Received by Category · Store #"+allocSearch.trim()+" · Fiscal Week" : "Cases Received by Category · Fiscal Week"}
             </div>
             <div style={{background:"#ffffff",border:"1px solid #d8d3c9",borderRadius:10,overflow:"hidden"}}>
@@ -2303,11 +2303,11 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                 <table style={{width:"100%",borderCollapse:"collapse",minWidth:700}}>
                   <thead>
                     <tr style={{background:"#ede9e3"}}>
-                      <th style={{padding:"10px 14px",textAlign:"left",fontSize:9,color:"#2d3752",fontFamily:"DM Mono,monospace",letterSpacing:1.2,textTransform:"uppercase",borderBottom:"1px solid #d8d3c9",whiteSpace:"nowrap",minWidth:120}}>Category</th>
+                      <th style={{padding:"10px 14px",textAlign:"left",fontSize:12,color:"#2d3752",fontFamily:"DM Sans,sans-serif",letterSpacing:0.3,textTransform:"uppercase",borderBottom:"1px solid #d8d3c9",whiteSpace:"nowrap",minWidth:120}}>Category</th>
                       {ALL_FWS.map(fw=>(
-                        <th key={fw} style={{padding:"10px 10px",textAlign:"center",fontSize:9,color:"#2d3752",fontFamily:"DM Mono,monospace",letterSpacing:1,textTransform:"uppercase",borderBottom:"1px solid #d8d3c9",whiteSpace:"nowrap"}}>{"FW"+String(fw).slice(-2)}</th>
+                        <th key={fw} style={{padding:"10px 10px",textAlign:"center",fontSize:12,color:"#2d3752",fontFamily:"DM Sans,sans-serif",letterSpacing:0.2,textTransform:"uppercase",borderBottom:"1px solid #d8d3c9",whiteSpace:"nowrap"}}>{"FW"+String(fw).slice(-2)}</th>
                       ))}
-                      <th style={{padding:"10px 14px",textAlign:"right",fontSize:9,color:"#7c3aed",fontFamily:"DM Mono,monospace",letterSpacing:1.2,textTransform:"uppercase",borderBottom:"1px solid #d8d3c9"}}>Total</th>
+                      <th style={{padding:"10px 14px",textAlign:"right",fontSize:12,color:"#7c3aed",fontFamily:"DM Sans,sans-serif",letterSpacing:0.3,textTransform:"uppercase",borderBottom:"1px solid #d8d3c9"}}>Total</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -2348,17 +2348,17 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
 
                         rows.push(
                           <tr key={cat} style={{background:ci%2===0?"#ffffff":"#f5f4f0"}}>
-                            <td style={{padding:"9px 14px",fontSize:11,color:"#0a0f1e",fontFamily:"DM Mono,monospace",borderBottom:"1px solid #d8d3c9",whiteSpace:"nowrap"}}>{catLabels[cat]}</td>
+                            <td style={{padding:"9px 14px",fontSize:14,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif",borderBottom:"1px solid #d8d3c9",whiteSpace:"nowrap"}}>{catLabels[cat]}</td>
                             {rowVals.map((v,i)=>{
                               const intensity = v>0 ? Math.max(0.15, v/maxVal) : 0;
                               return (
                                 <td key={i} style={{padding:"9px 10px",textAlign:"center",borderBottom:"1px solid #d8d3c9",position:"relative"}}>
                                   {v>0 && <div style={{position:"absolute",inset:0,background:"#7c3aed",opacity:intensity*0.25,borderRadius:2}}/>}
-                                  <span style={{position:"relative",fontSize:11,color:v>0?"#0a0f1e":"#2d3752",fontFamily:"DM Mono,monospace",fontWeight:v>0?600:400}}>{v>0?v:"—"}</span>
+                                  <span style={{position:"relative",fontSize:14,color:v>0?"#0a0f1e":"#2d3752",fontFamily:"DM Sans,sans-serif",fontWeight:v>0?600:400}}>{v>0?v:"—"}</span>
                                 </td>
                               );
                             })}
-                            <td style={{padding:"9px 14px",textAlign:"right",fontSize:11,fontWeight:700,color:"#7c3aed",fontFamily:"DM Mono,monospace",borderBottom:"1px solid #d8d3c9"}}>{rowTotal}</td>
+                            <td style={{padding:"9px 14px",textAlign:"right",fontSize:14,fontWeight:700,color:"#7c3aed",fontFamily:"DM Sans,sans-serif",borderBottom:"1px solid #d8d3c9"}}>{rowTotal}</td>
                           </tr>
                         );
                       });
@@ -2366,11 +2366,11 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                       // Total row
                       rows.push(
                         <tr key="total" style={{background:"#ede9e3",borderTop:"1px solid #d8d3c9"}}>
-                          <td style={{padding:"10px 14px",fontSize:10,color:"#0a0f1e",fontFamily:"DM Mono,monospace",fontWeight:700,letterSpacing:1}}>TOTAL</td>
+                          <td style={{padding:"10px 14px",fontSize:13,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif",fontWeight:700,letterSpacing:0.2}}>TOTAL</td>
                           {ALL_FWS.map(fw=>(
-                            <td key={fw} style={{padding:"10px 10px",textAlign:"center",fontSize:11,fontWeight:700,color:totals[fw]>0?"#0a0f1e":"#2d3752",fontFamily:"DM Mono,monospace"}}>{totals[fw]>0?totals[fw]:"—"}</td>
+                            <td key={fw} style={{padding:"10px 10px",textAlign:"center",fontSize:14,fontWeight:700,color:totals[fw]>0?"#0a0f1e":"#2d3752",fontFamily:"DM Sans,sans-serif"}}>{totals[fw]>0?totals[fw]:"—"}</td>
                           ))}
-                          <td style={{padding:"10px 14px",textAlign:"right",fontSize:12,fontWeight:700,color:"#0a0f1e",fontFamily:"DM Mono,monospace"}}>{grandTot}</td>
+                          <td style={{padding:"10px 14px",textAlign:"right",fontSize:15,fontWeight:700,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif"}}>{grandTot}</td>
                         </tr>
                       );
                       return rows;
@@ -2404,12 +2404,12 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
             if(filteredLog.length===0) return null;
             return (
             <div style={{marginTop:28}}>
-              <div style={{fontSize:10,color:"#f5a623",letterSpacing:1.5,textTransform:"uppercase",marginBottom:4,fontFamily:"DM Mono,monospace",display:"flex",alignItems:"center",gap:8}}>
+              <div style={{fontSize:13,color:"#f5a623",letterSpacing:0.5,textTransform:"uppercase",marginBottom:4,fontFamily:"DM Sans,sans-serif",display:"flex",alignItems:"center",gap:8}}>
                 <span>⚠</span>
                 <span>Corrections Log — Outbound Data Overrides</span>
-                <span style={{fontSize:9,color:"#3a5a7a",marginLeft:4}}>Source: DC Template Orders Del Wk 12 / 13 / 14 / 15</span>
+                <span style={{fontSize:12,color:"#3a5a7a",marginLeft:4}}>Source: DC Template Orders Del Wk 12 / 13 / 14 / 15</span>
               </div>
-              <div style={{fontSize:9,color:"#3a5a7a",fontFamily:"DM Mono,monospace",marginBottom:12}}>
+              <div style={{fontSize:12,color:"#3a5a7a",fontFamily:"DM Sans,sans-serif",marginBottom:12}}>
                 The following store outbound quantities were corrected based on the DC Template file. Original FY2026 export values differed from actual cases shipped. (FW15: 0 corrections — template matched export exactly.)
               </div>
               <div style={{background:"#ffffff",border:"1px solid #d8d3c9",borderRadius:10,overflow:"hidden"}}>
@@ -2418,34 +2418,34 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                     <thead>
                       <tr style={{background:"#f5f4f0"}}>
                         {["FW","DC","Store","Product","Original Cases","Corrected Cases","Difference"].map(h=>(
-                          <th key={h} style={{padding:"8px 12px",textAlign:h==="Difference"||h==="Original Cases"||h==="Corrected Cases"?"right":"left",fontSize:9,color:"#7a5a00",fontFamily:"DM Mono,monospace",letterSpacing:1,textTransform:"uppercase",borderBottom:"1px solid #2a1a00",whiteSpace:"nowrap"}}>{h}</th>
+                          <th key={h} style={{padding:"8px 12px",textAlign:h==="Difference"||h==="Original Cases"||h==="Corrected Cases"?"right":"left",fontSize:12,color:"#7a5a00",fontFamily:"DM Sans,sans-serif",letterSpacing:0.2,textTransform:"uppercase",borderBottom:"1px solid #2a1a00",whiteSpace:"nowrap"}}>{h}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
                       {filteredLog.map((r,i)=>(
                         <tr key={i} style={{background:i%2===0?"#ffffff":"#f5f4f0"}}>
-                          <td style={{padding:"7px 12px",fontSize:10,color:"#a07030",fontFamily:"DM Mono,monospace",borderBottom:"1px solid #d8d3c9"}}>{"FW"+String(r.fw).slice(-2)}</td>
-                          <td style={{padding:"7px 12px",fontSize:10,color:"#7a5a00",fontFamily:"DM Mono,monospace",borderBottom:"1px solid #d8d3c9"}}>{r.dc}</td>
-                          <td style={{padding:"7px 12px",fontSize:10,borderBottom:"1px solid #d8d3c9"}}>
-                            <div style={{fontWeight:600,color:"#0a0f1e",fontFamily:"DM Mono,monospace"}}>{"#"+r.store}</div>
-                            <div style={{fontSize:8,color:"#3a5a7a",marginTop:1}}>{STORE_META[r.store]?.name||""}</div>
+                          <td style={{padding:"7px 12px",fontSize:13,color:"#a07030",fontFamily:"DM Sans,sans-serif",borderBottom:"1px solid #d8d3c9"}}>{"FW"+String(r.fw).slice(-2)}</td>
+                          <td style={{padding:"7px 12px",fontSize:13,color:"#7a5a00",fontFamily:"DM Sans,sans-serif",borderBottom:"1px solid #d8d3c9"}}>{r.dc}</td>
+                          <td style={{padding:"7px 12px",fontSize:13,borderBottom:"1px solid #d8d3c9"}}>
+                            <div style={{fontWeight:600,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif"}}>{"#"+r.store}</div>
+                            <div style={{fontSize:11,color:"#3a5a7a",marginTop:1}}>{STORE_META[r.store]?.name||""}</div>
                           </td>
-                          <td style={{padding:"7px 12px",fontSize:10,color:"#a07030",fontFamily:"DM Mono,monospace",borderBottom:"1px solid #d8d3c9"}}>{r.product}</td>
-                          <td style={{padding:"7px 12px",textAlign:"right",fontSize:10,color:"#2d3752",fontFamily:"DM Mono,monospace",borderBottom:"1px solid #d8d3c9",textDecoration:"line-through"}}>{r.orig}</td>
-                          <td style={{padding:"7px 12px",textAlign:"right",fontSize:10,fontWeight:600,color:"#4ade80",fontFamily:"DM Mono,monospace",borderBottom:"1px solid #d8d3c9"}}>{r.corrected}</td>
-                          <td style={{padding:"7px 12px",textAlign:"right",fontSize:10,color:r.diff<0?"#f87171":"#4ade80",fontFamily:"DM Mono,monospace",borderBottom:"1px solid #d8d3c9"}}>{r.diff>0?"+"+r.diff:r.diff}</td>
+                          <td style={{padding:"7px 12px",fontSize:13,color:"#a07030",fontFamily:"DM Sans,sans-serif",borderBottom:"1px solid #d8d3c9"}}>{r.product}</td>
+                          <td style={{padding:"7px 12px",textAlign:"right",fontSize:13,color:"#2d3752",fontFamily:"DM Sans,sans-serif",borderBottom:"1px solid #d8d3c9",textDecoration:"line-through"}}>{r.orig}</td>
+                          <td style={{padding:"7px 12px",textAlign:"right",fontSize:13,fontWeight:600,color:"#4ade80",fontFamily:"DM Sans,sans-serif",borderBottom:"1px solid #d8d3c9"}}>{r.corrected}</td>
+                          <td style={{padding:"7px 12px",textAlign:"right",fontSize:13,color:r.diff<0?"#f87171":"#4ade80",fontFamily:"DM Sans,sans-serif",borderBottom:"1px solid #d8d3c9"}}>{r.diff>0?"+"+r.diff:r.diff}</td>
                         </tr>
                       ))}
                     </tbody>
                     <tfoot>
                       <tr style={{background:"#f5f4f0",borderTop:"1px solid #d8d3c9"}}>
-                        <td colSpan={4} style={{padding:"8px 12px",fontSize:10,color:"#f5a623",fontFamily:"DM Mono,monospace",fontWeight:700}}>
+                        <td colSpan={4} style={{padding:"8px 12px",fontSize:13,color:"#f5a623",fontFamily:"DM Sans,sans-serif",fontWeight:700}}>
                           {filteredLog.length+" corrections · "+[...new Set(filteredLog.map(r=>r.dc))].length+" DCs · "+[...new Set(filteredLog.map(r=>r.store))].length+" stores"}
                         </td>
-                        <td style={{padding:"8px 12px",textAlign:"right",fontSize:10,color:"#2d3752",fontFamily:"DM Mono,monospace",fontWeight:700,textDecoration:"line-through"}}>{filteredLog.reduce((a,r)=>a+r.orig,0)}</td>
-                        <td style={{padding:"8px 12px",textAlign:"right",fontSize:10,color:"#4ade80",fontFamily:"DM Mono,monospace",fontWeight:700}}>{filteredLog.reduce((a,r)=>a+r.corrected,0)}</td>
-                        <td style={{padding:"8px 12px",textAlign:"right",fontSize:10,color:"#f87171",fontFamily:"DM Mono,monospace",fontWeight:700}}>{filteredLog.reduce((a,r)=>a+r.diff,0)}</td>
+                        <td style={{padding:"8px 12px",textAlign:"right",fontSize:13,color:"#2d3752",fontFamily:"DM Sans,sans-serif",fontWeight:700,textDecoration:"line-through"}}>{filteredLog.reduce((a,r)=>a+r.orig,0)}</td>
+                        <td style={{padding:"8px 12px",textAlign:"right",fontSize:13,color:"#4ade80",fontFamily:"DM Sans,sans-serif",fontWeight:700}}>{filteredLog.reduce((a,r)=>a+r.corrected,0)}</td>
+                        <td style={{padding:"8px 12px",textAlign:"right",fontSize:13,color:"#f87171",fontFamily:"DM Sans,sans-serif",fontWeight:700}}>{filteredLog.reduce((a,r)=>a+r.diff,0)}</td>
                       </tr>
                     </tfoot>
                   </table>
@@ -2469,13 +2469,13 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
           {/* Panel Header */}
           <div style={{padding:isMobile?"12px 16px":"14px 18px",background:"#ffffff",borderBottom:"1px solid #d8d3c9",display:"flex",alignItems:"center",gap:10,flexShrink:0}}>
             <span style={{fontSize:14}}>💡</span>
-            <span style={{fontSize:11,fontWeight:700,color:"#0a0f1e",fontFamily:"DM Mono,monospace",letterSpacing:1.2}}>INSIGHTS</span>
+            <span style={{fontSize:14,fontWeight:700,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif",letterSpacing:0.3}}>INSIGHTS</span>
             <div style={{marginLeft:"auto",display:"flex",gap:6,alignItems:"center"}}>
               {[["cards","Quick Insights"],["chat","Ask AI"]].map(([k,l])=>(
-                <button key={k} onClick={()=>setInsightsTab(k)} style={{padding:isMobile?"5px 14px":"4px 12px",background:insightsTab===k?"#c8934a":"transparent",border:"1px solid "+(insightsTab===k?"#c8934a":"#d8d3c9"),color:insightsTab===k?"#fff":"#2d3752",borderRadius:5,cursor:"pointer",fontSize:isMobile?10:9,fontFamily:"DM Mono,monospace",letterSpacing:1}}>{l}</button>
+                <button key={k} onClick={()=>setInsightsTab(k)} style={{padding:isMobile?"5px 14px":"4px 12px",background:insightsTab===k?"#c8934a":"transparent",border:"1px solid "+(insightsTab===k?"#c8934a":"#d8d3c9"),color:insightsTab===k?"#fff":"#2d3752",borderRadius:5,cursor:"pointer",fontSize:isMobile?10:9,fontFamily:"DM Sans,sans-serif",letterSpacing:0.2}}>{l}</button>
               ))}
               {isMobile&&(
-                <button onClick={()=>setInsightsOpen(false)} style={{marginLeft:6,background:"#e4ddd4",border:"none",borderRadius:20,width:32,height:32,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:"#0a0f1e",fontSize:16,flexShrink:0}}>✕</button>
+                <button onClick={()=>setInsightsOpen(false)} style={{marginLeft:6,background:"#e4ddd4",border:"none",borderRadius:20,width:32,height:32,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:"#0a0f1e",fontSize:17,flexShrink:0}}>✕</button>
               )}
             </div>
           </div>
@@ -2487,8 +2487,8 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                 const {storeSTList,highPerf,zeroPieces,worstDist,dcSTRanked} = insightsData;
                 const Card = ({icon,title,children})=>(
                   <div style={{background:"#f5f4f0",border:"1px solid #d8d3c9",borderRadius:8,padding:"12px 14px"}}>
-                    <div style={{fontSize:9,color:"#2d3752",fontFamily:"DM Mono,monospace",letterSpacing:1.2,textTransform:"uppercase",marginBottom:8,display:"flex",alignItems:"center",gap:6}}>
-                      <span style={{fontSize:12}}>{icon}</span>{title}
+                    <div style={{fontSize:12,color:"#2d3752",fontFamily:"DM Sans,sans-serif",letterSpacing:0.3,textTransform:"uppercase",marginBottom:8,display:"flex",alignItems:"center",gap:6}}>
+                      <span style={{fontSize:15}}>{icon}</span>{title}
                     </div>
                     {children}
                   </div>
@@ -2498,26 +2498,26 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                     <Card icon="🏆" title={"Top 5 Stores — Store ST% (5\" Orchids, Last 4 Wks)"}>
                       {storeSTList.slice(0,5).map(r=>(
                         <div key={r.store} style={{display:"flex",justifyContent:"space-between",padding:"3px 0",borderBottom:"1px solid #d8d3c9"}}>
-                          <span style={{fontSize:10,color:"#0a0f1e",fontFamily:"DM Mono,monospace"}}>{"#"+r.store+" "+r.name.split("-").slice(0,2).join("-")}</span>
-                          <span style={{fontSize:10,fontWeight:700,color:"#4ade80",fontFamily:"DM Mono,monospace"}}>{r.st.toFixed(1)+"%"}</span>
+                          <span style={{fontSize:13,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif"}}>{"#"+r.store+" "+r.name.split("-").slice(0,2).join("-")}</span>
+                          <span style={{fontSize:13,fontWeight:700,color:"#4ade80",fontFamily:"DM Sans,sans-serif"}}>{r.st.toFixed(1)+"%"}</span>
                         </div>
                       ))}
                     </Card>
                     <Card icon="⚠️" title={"Bottom 5 Stores — Store ST% (5\" Orchids, Last 4 Wks)"}>
                       {[...storeSTList].reverse().slice(0,5).map(r=>(
                         <div key={r.store} style={{display:"flex",justifyContent:"space-between",padding:"3px 0",borderBottom:"1px solid #d8d3c9"}}>
-                          <span style={{fontSize:10,color:"#0a0f1e",fontFamily:"DM Mono,monospace"}}>{"#"+r.store+" "+r.name.split("-").slice(0,2).join("-")}</span>
-                          <span style={{fontSize:10,fontWeight:700,color:"#f87171",fontFamily:"DM Mono,monospace"}}>{r.st.toFixed(1)+"%"}</span>
+                          <span style={{fontSize:13,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif"}}>{"#"+r.store+" "+r.name.split("-").slice(0,2).join("-")}</span>
+                          <span style={{fontSize:13,fontWeight:700,color:"#f87171",fontFamily:"DM Sans,sans-serif"}}>{r.st.toFixed(1)+"%"}</span>
                         </div>
                       ))}
                     </Card>
                     <Card icon="🔵" title={"High Performers (+2 eligible) — "+highPerf.length+" stores"}>
                       {highPerf.length===0
-                        ? <div style={{fontSize:10,color:"#3a5a7a",fontFamily:"DM Mono,monospace"}}>No stores qualify yet</div>
+                        ? <div style={{fontSize:13,color:"#3a5a7a",fontFamily:"DM Sans,sans-serif"}}>No stores qualify yet</div>
                         : highPerf.slice(0,6).map(r=>(
                           <div key={r.store} style={{display:"flex",justifyContent:"space-between",padding:"3px 0",borderBottom:"1px solid #d8d3c9"}}>
-                            <span style={{fontSize:10,color:"#0a0f1e",fontFamily:"DM Mono,monospace"}}>{"#"+r.store+" "+r.name.split("-").slice(0,2).join("-")}</span>
-                            <span style={{fontSize:10,color:"#60d9fa",fontFamily:"DM Mono,monospace"}}>{r.consec+" consec wks"}</span>
+                            <span style={{fontSize:13,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif"}}>{"#"+r.store+" "+r.name.split("-").slice(0,2).join("-")}</span>
+                            <span style={{fontSize:13,color:"#60d9fa",fontFamily:"DM Sans,sans-serif"}}>{r.consec+" consec wks"}</span>
                           </div>
                         ))
                       }
@@ -2525,25 +2525,25 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                     <Card icon="📦" title={"0 Pieces Rcvd (5\" Orchids, Last 4 Wks) — "+zeroPieces.length+" stores"}>
                       {zeroPieces.slice(0,5).map(s=>(
                         <div key={s} style={{display:"flex",justifyContent:"space-between",padding:"3px 0",borderBottom:"1px solid #d8d3c9"}}>
-                          <span style={{fontSize:10,color:"#0a0f1e",fontFamily:"DM Mono,monospace"}}>{"#"+s}</span>
-                          <span style={{fontSize:9,color:"#3a5a7a",fontFamily:"DM Mono,monospace"}}>{(STORE_META[s]?.name||"").split("-").slice(0,2).join("-")}</span>
+                          <span style={{fontSize:13,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif"}}>{"#"+s}</span>
+                          <span style={{fontSize:12,color:"#3a5a7a",fontFamily:"DM Sans,sans-serif"}}>{(STORE_META[s]?.name||"").split("-").slice(0,2).join("-")}</span>
                         </div>
                       ))}
-                      {zeroPieces.length>5&&<div style={{fontSize:9,color:"#3a5a7a",fontFamily:"DM Mono,monospace",marginTop:4}}>+{zeroPieces.length-5} more</div>}
+                      {zeroPieces.length>5&&<div style={{fontSize:12,color:"#3a5a7a",fontFamily:"DM Sans,sans-serif",marginTop:4}}>+{zeroPieces.length-5} more</div>}
                     </Card>
                     <Card icon="📉" title="Worst 5 Districts — YoY % (YTD)">
                       {worstDist.map(r=>(
                         <div key={r.district} style={{display:"flex",justifyContent:"space-between",padding:"3px 0",borderBottom:"1px solid #d8d3c9"}}>
-                          <span style={{fontSize:10,color:"#0a0f1e",fontFamily:"DM Mono,monospace"}}>{r.district}</span>
-                          <span style={{fontSize:10,fontWeight:700,color:"#f87171",fontFamily:"DM Mono,monospace"}}>{r.yoyP.toFixed(1)+"%"}</span>
+                          <span style={{fontSize:13,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif"}}>{r.district}</span>
+                          <span style={{fontSize:13,fontWeight:700,color:"#f87171",fontFamily:"DM Sans,sans-serif"}}>{r.yoyP.toFixed(1)+"%"}</span>
                         </div>
                       ))}
                     </Card>
                     <Card icon="✅" title={"DC Avg ST% Ranking (5\" Orchids, Last 4 Wks)"}>
                       {dcSTRanked.map(r=>(
                         <div key={r.dc} style={{display:"flex",justifyContent:"space-between",padding:"3px 0",borderBottom:"1px solid #d8d3c9"}}>
-                          <span style={{fontSize:10,color:"#0a0f1e",fontFamily:"DM Mono,monospace"}}>{r.dc}</span>
-                          <span style={{fontSize:10,fontWeight:700,color:r.avg>=80?"#4ade80":r.avg>=60?"#f5a623":"#f87171",fontFamily:"DM Mono,monospace"}}>{r.avg.toFixed(1)+"%"}</span>
+                          <span style={{fontSize:13,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif"}}>{r.dc}</span>
+                          <span style={{fontSize:13,fontWeight:700,color:r.avg>=80?"#4ade80":r.avg>=60?"#f5a623":"#f87171",fontFamily:"DM Sans,sans-serif"}}>{r.avg.toFixed(1)+"%"}</span>
                         </div>
                       ))}
                     </Card>
@@ -2554,10 +2554,10 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                         return (
                           <div key={dc} style={{padding:"3px 0",borderBottom:"1px solid #d8d3c9"}}>
                             <div style={{display:"flex",justifyContent:"space-between"}}>
-                              <span style={{fontSize:10,color:"#a07030",fontFamily:"DM Mono,monospace"}}>{dc}</span>
-                              <span style={{fontSize:10,color:"#f87171",fontFamily:"DM Mono,monospace"}}>{diff+" cases"}</span>
+                              <span style={{fontSize:13,color:"#a07030",fontFamily:"DM Sans,sans-serif"}}>{dc}</span>
+                              <span style={{fontSize:13,color:"#f87171",fontFamily:"DM Sans,sans-serif"}}>{diff+" cases"}</span>
                             </div>
-                            <div style={{fontSize:9,color:"#3a5a7a",fontFamily:"DM Mono,monospace"}}>{rows.length+" stores · FW"+String(CORRECTIONS_LOG[0]?.fw||0).slice(-2)}</div>
+                            <div style={{fontSize:12,color:"#3a5a7a",fontFamily:"DM Sans,sans-serif"}}>{rows.length+" stores · FW"+String(CORRECTIONS_LOG[0]?.fw||0).slice(-2)}</div>
                           </div>
                         );
                       })}
@@ -2573,7 +2573,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
             <div style={{display:"flex",flexDirection:"column",flex:1,overflow:"hidden"}}>
               <div style={{flex:1,overflowY:"auto",padding:isMobile?12:16,display:"flex",flexDirection:"column",gap:10,WebkitOverflowScrolling:"touch"}}>
                 {chatMessages.length===0&&(
-                  <div style={{color:"#2d3752",fontSize:isMobile?11:10,fontFamily:"DM Mono,monospace",lineHeight:1.8}}>
+                  <div style={{color:"#2d3752",fontSize:isMobile?11:10,fontFamily:"DM Sans,sans-serif",lineHeight:1.8}}>
                     <div style={{marginBottom:8,color:"#2d3752"}}>Ask me anything about the dashboard data. Examples:</div>
                     {["Which stores in FULRTNCADC should get +2 cases?","What happened to 5\" Fused sales in FW07?","Which district had the best YoY performance?","Compare Central vs SoCal YTD","Which stores have 0 pieces received this month?"].map(q=>(
                       <div key={q} onClick={()=>setChatInput(q)} style={{cursor:"pointer",padding:isMobile?"8px 10px":"4px 8px",borderRadius:4,border:"1px solid #d8d3c9",marginBottom:6,color:"#c8934a",fontSize:isMobile?11:10,lineHeight:1.5}}>{q}</div>
@@ -2582,12 +2582,12 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                 )}
                 {chatMessages.map((m,i)=>(
                   <div key={i} style={{display:"flex",justifyContent:m.role==="user"?"flex-end":"flex-start"}}>
-                    <div style={{maxWidth:"85%",padding:isMobile?"10px 14px":"8px 12px",borderRadius:8,background:m.role==="user"?"#c8934a":"#ede9e3",border:"1px solid "+(m.role==="user"?"#c8934a":"#d81e30"),fontSize:isMobile?12:11,color:"#0a0f1e",fontFamily:"DM Mono,monospace",lineHeight:1.6,whiteSpace:"pre-wrap"}}>{m.content}</div>
+                    <div style={{maxWidth:"85%",padding:isMobile?"10px 14px":"8px 12px",borderRadius:8,background:m.role==="user"?"#c8934a":"#ede9e3",border:"1px solid "+(m.role==="user"?"#c8934a":"#d81e30"),fontSize:isMobile?12:11,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif",lineHeight:1.6,whiteSpace:"pre-wrap"}}>{m.content}</div>
                   </div>
                 ))}
                 {chatLoading&&(
                   <div style={{display:"flex",justifyContent:"flex-start"}}>
-                    <div style={{padding:"8px 12px",borderRadius:8,background:"#ede9e3",border:"1px solid #d8d3c9",fontSize:11,color:"#2d3752",fontFamily:"DM Mono,monospace"}}>Thinking...</div>
+                    <div style={{padding:"8px 12px",borderRadius:8,background:"#ede9e3",border:"1px solid #d8d3c9",fontSize:14,color:"#2d3752",fontFamily:"DM Sans,sans-serif"}}>Thinking...</div>
                   </div>
                 )}
               </div>
@@ -2602,9 +2602,9 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                     }
                   }}
                   placeholder="Ask about your data..."
-                  style={{flex:1,background:"#ede9e3",border:"1px solid #d8d3c9",color:"#2d3752",fontSize:isMobile?13:10,borderRadius:6,padding:isMobile?"12px 14px":"8px 12px",fontFamily:"DM Mono,monospace",outline:"none"}}
+                  style={{flex:1,background:"#ede9e3",border:"1px solid #d8d3c9",color:"#2d3752",fontSize:isMobile?13:10,borderRadius:6,padding:isMobile?"12px 14px":"8px 12px",fontFamily:"DM Sans,sans-serif",outline:"none"}}
                 />
-                <button onClick={()=>handleChatSend(chatInput.trim())} style={{padding:isMobile?"12px 20px":"8px 14px",background:"#c8934a",border:"none",borderRadius:6,color:"#fff",cursor:"pointer",fontSize:isMobile?16:10,fontFamily:"DM Mono,monospace",flexShrink:0}}>↵</button>
+                <button onClick={()=>handleChatSend(chatInput.trim())} style={{padding:isMobile?"12px 20px":"8px 14px",background:"#c8934a",border:"none",borderRadius:6,color:"#fff",cursor:"pointer",fontSize:isMobile?16:10,fontFamily:"DM Sans,sans-serif",flexShrink:0}}>↵</button>
               </div>
             </div>
           )}
@@ -2626,12 +2626,12 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
   };
 
   if(!authenticated) return (
-    <div style={{minHeight:"100vh",background:"#edeae3",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'DM Mono',monospace"}}>
+    <div style={{minHeight:"100vh",background:"#edeae3",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'DM Sans',sans-serif"}}>
       <style>{`@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}`}</style>
       <div style={{width:380,background:"#ffffff",border:"1px solid #d8d3c9",borderRadius:16,padding:"40px 36px",boxShadow:"0 20px 60px rgba(0,0,0,0.6)",textAlign:"center",animation:pwShake?"shake 0.5s ease":"none"}}>
         {LOGO_B64&&<img src={LOGO_B64} alt="Sprouts" style={{height:48,marginBottom:24,objectFit:"contain"}}/>}
-        <div style={{fontSize:13,fontWeight:700,color:"#0a0f1e",letterSpacing:2,textTransform:"uppercase",marginBottom:6}}>Floral Sales Dashboard</div>
-        <div style={{fontSize:10,color:"#2d3752",marginBottom:32,letterSpacing:1}}>Internal Use Only</div>
+        <div style={{fontSize:15,fontWeight:700,color:"#0a0f1e",letterSpacing:0.5,textTransform:"uppercase",marginBottom:6}}>Floral Sales Dashboard</div>
+        <div style={{fontSize:13,color:"#2d3752",marginBottom:32,letterSpacing:0.2}}>Internal Use Only</div>
         <input
           type="password"
           value={pwInput}
@@ -2639,13 +2639,13 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
           onKeyDown={e=>e.key==="Enter"&&handleLogin()}
           placeholder="Enter password"
           autoFocus
-          style={{width:"100%",boxSizing:"border-box",background:"#ede9e3",border:"1px solid "+(pwError?"#f87171":"#d8d3c9"),color:"#0a0f1e",fontSize:12,padding:"12px 16px",borderRadius:8,outline:"none",marginBottom:12,fontFamily:"'DM Mono',monospace",letterSpacing:1,textAlign:"center"}}
+          style={{width:"100%",boxSizing:"border-box",background:"#ede9e3",border:"1px solid "+(pwError?"#f87171":"#d8d3c9"),color:"#0a0f1e",fontSize:15,padding:"12px 16px",borderRadius:8,outline:"none",marginBottom:12,fontFamily:"'DM Sans',sans-serif",letterSpacing:0.2,textAlign:"center"}}
         />
-        {pwError&&<div style={{fontSize:10,color:"#f87171",marginBottom:12,letterSpacing:1}}>Incorrect password. Please try again.</div>}
-        <button onClick={handleLogin} style={{width:"100%",padding:"12px",background:"#c8934a",border:"none",borderRadius:8,color:"#fff",fontSize:11,fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",cursor:"pointer"}}>
+        {pwError&&<div style={{fontSize:13,color:"#f87171",marginBottom:12,letterSpacing:0.2}}>Incorrect password. Please try again.</div>}
+        <button onClick={handleLogin} style={{width:"100%",padding:"12px",background:"#c8934a",border:"none",borderRadius:8,color:"#fff",fontSize:14,fontWeight:700,letterSpacing:0.5,textTransform:"uppercase",cursor:"pointer"}}>
           Access Dashboard
         </button>
-        <div style={{fontSize:9,color:"#2d3752",marginTop:24,letterSpacing:1}}>© Boring Deco · Sprouts Farmers Market</div>
+        <div style={{fontSize:12,color:"#2d3752",marginTop:24,letterSpacing:0.2}}>© Boring Deco · Sprouts Farmers Market</div>
       </div>
     </div>
   );
