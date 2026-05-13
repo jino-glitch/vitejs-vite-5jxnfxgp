@@ -1329,7 +1329,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
 
           <TopBottom3 rows={prodTable} nameKey="prod" valueKey="sales" label="Sales This Week" fmt={fmt$}/>
 
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
+          <div style={{display:"grid",gridTemplateColumns:"1fr",gap:20}}>
             {/* By Product - WoW */}
             <div style={{background:"#ffffff",border:"1px solid #d8d3c9",borderRadius:10,overflow:"hidden"}}>
               <div style={{padding:"14px 16px",borderBottom:"1px solid #d8d3c9",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
@@ -1386,9 +1386,9 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                       isExp && storeTable.map((s,j)=>(
                         <tr key={r.dc+"-"+s.store} style={{background:"#f5f4f0"}}>
                           <td style={{...tdS(),paddingLeft:28,color:"#2d3752",fontSize:13}}>Store {s.store}</td>
-                          <td style={tdS("right","#8ab4cc")}>{fmt$(s.sales)}</td>
-                          <td style={tdS("right","#8ab4cc")}>{fmtU(s.units)}</td>
-                          <td style={tdS("right","#8ab4cc")}>{s.units>0?"$"+(s.sales/s.units).toFixed(2):"—"}</td>
+                          <td style={tdS("right")}>{fmt$(s.sales)}</td>
+                          <td style={tdS("right")}>{fmtU(s.units)}</td>
+                          <td style={tdS("right")}>{s.units>0?"$"+(s.sales/s.units).toFixed(2):"—"}</td>
                           <td style={tdS("right",clr(s.wd))}>{s.wd!=null?fmtD(s.wd):"—"}</td>
                           <td style={tdS("right",clr(s.wp))}>{s.wp!=null?fmtP(s.wp):"—"}</td>
                           <td style={{padding:"9px 14px",borderBottom:"1px solid #d8d3c9"}}></td>
@@ -1427,7 +1427,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
 
           <TopBottom3 rows={prodTable} nameKey="prod" valueKey="yd" label="YoY $ Change" fmt={fmtD}/>
 
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
+          <div style={{display:"grid",gridTemplateColumns:"1fr",gap:20}}>
             {/* By Product - YoY */}
             <div style={{background:"#ffffff",border:"1px solid #d8d3c9",borderRadius:10,overflow:"hidden"}}>
               <div style={{padding:"14px 16px",borderBottom:"1px solid #d8d3c9",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
@@ -1486,9 +1486,9 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                       isExp && storeTable.map((s,j)=>(
                         <tr key={r.dc+"-s-"+s.store} style={{background:"#f5f4f0"}}>
                           <td style={{...tdS(),paddingLeft:28,color:"#2d3752",fontSize:13}}>Store {s.store}</td>
-                          <td style={tdS("right","#8ab4cc")}>{fmt$(s.sales)}</td>
-                          <td style={tdS("right","#8ab4cc")}>{fmtU(s.units)}</td>
-                          <td style={tdS("right","#8ab4cc")}>{s.units>0?"$"+(s.sales/s.units).toFixed(2):"—"}</td>
+                          <td style={tdS("right")}>{fmt$(s.sales)}</td>
+                          <td style={tdS("right")}>{fmtU(s.units)}</td>
+                          <td style={tdS("right")}>{s.units>0?"$"+(s.sales/s.units).toFixed(2):"—"}</td>
                           <td style={tdS("right")} colSpan={4}></td>
                         </tr>
                       ))
@@ -1522,7 +1522,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
 
           <TopBottom3 rows={ytdByProd} nameKey="prod" valueKey="s26" label="YTD Sales FY26" fmt={fmt$}/>
 
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
+          <div style={{display:"grid",gridTemplateColumns:"1fr",gap:20}}>
             {/* YTD by DC */}
             <div style={{background:"#ffffff",border:"1px solid #d8d3c9",borderRadius:10,overflow:"hidden"}}>
               <div style={{padding:"14px 16px",borderBottom:"1px solid #d8d3c9",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
