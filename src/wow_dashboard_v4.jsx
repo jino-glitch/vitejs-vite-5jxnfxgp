@@ -2475,7 +2475,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
             <span style={{fontSize:14}}>💡</span>
             <span style={{fontSize:14,fontWeight:700,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif",letterSpacing:0.3}}>INSIGHTS</span>
             <div style={{marginLeft:"auto",display:"flex",gap:6,alignItems:"center"}}>
-              {[["cards","Quick Insights"],["chat","Ask AI"]].map(([k,l])=>(
+              {[["chat","Ask"],["cards","Quick Insights"]].map(([k,l])=>(
                 <button key={k} onClick={()=>setInsightsTab(k)} style={{padding:isMobile?"5px 14px":"4px 12px",background:insightsTab===k?"#c8934a":"transparent",border:"1px solid "+(insightsTab===k?"#c8934a":"#d8d3c9"),color:insightsTab===k?"#fff":"#2d3752",borderRadius:5,cursor:"pointer",fontSize:isMobile?10:9,fontFamily:"DM Sans,sans-serif",letterSpacing:0.2}}>{l}</button>
               ))}
               {isMobile&&(
@@ -2586,7 +2586,8 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                 )}
                 {chatMessages.map((m,i)=>(
                   <div key={i} style={{display:"flex",justifyContent:m.role==="user"?"flex-end":"flex-start"}}>
-                    <div style={{maxWidth:"85%",padding:isMobile?"10px 14px":"8px 12px",borderRadius:8,background:m.role==="user"?"#c8934a":"#ede9e3",border:"1px solid "+(m.role==="user"?"#c8934a":"#d81e30"),fontSize:isMobile?12:11,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif",lineHeight:1.6,whiteSpace:"pre-wrap"}}>{m.content}</div>
+                    <div style={{maxWidth:"85%",padding:isMobile?"10px 14px":"8px 12px",borderRadius:8,background:m.role==="user"?"#c8934a":"#ede9e3",border:"1px solid "+(m.role==="user"?"#c8934a":"#d81e30"),fontSize:isMobile?12:11,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif",lineHeight:1.6,whiteSpace:"pre-wrap"}}>{m.role==="assistant" ? React.createElement("span", {dangerouslySetInnerHTML:{__html:m.content.replace(/**(.+?)**/g,"<strong>$1</strong>").replace(/
+/g,"<br/>").replace(/^- /gm,"• ")}}) : m.content}</div>
                   </div>
                 ))}
                 {chatLoading&&(
