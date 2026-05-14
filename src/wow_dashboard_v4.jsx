@@ -1869,6 +1869,48 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
               </tbody>
             </table>
             </div>
+
+          {/^\d+$/.test(storeSearch)&&storeSearch&&(()=>{
+            const storeNum = storeSearch;
+            const catLabels = [['5inch','5\" Orchid'],['3inch','3\" Orchid'],['fused','5\" Fused'],['cascades','Cascades']];
+            const rows = catLabels.map(([catKey,catLabel])=>{
+              const storeData = STORE_OUTBOUND[catKey]?.[storeNum];
+              if (!storeData) return null;
+              const fws = Object.keys(storeData).filter(fw=>storeData[fw][0]>0).sort();
+              if (!fws.length) return null;
+              const lastFW = fws[fws.length-1];
+              return {catLabel, lastFW, cases:storeData[lastFW][0], pieces:storeData[lastFW][1]};
+            }).filter(Boolean);
+            if (!rows.length) return null;
+            return (
+              <div style={{background:'#ffffff',border:'1px solid #d8d3c9',borderRadius:10,overflow:'hidden',marginTop:20}}>
+                <div style={{padding:'10px 16px',background:'#ede9e3',borderBottom:'1px solid #d8d3c9'}}>
+                  <span style={{fontSize:13,color:'#2d3752',letterSpacing:0.5,textTransform:'uppercase',fontFamily:'DM Sans,sans-serif'}}>Last Received · Store {storeSearch}</span>
+                </div>
+                <div style={{overflowX:'auto'}}>
+                <table style={{width:'100%',borderCollapse:'collapse'}}>
+                  <thead>
+                    <tr style={{background:'#ede9e3'}}>
+                      {['Category','Last FW','Cases','Pieces'].map(h=>(
+                        <th key={h} style={{padding:'8px 14px',textAlign:h==='Category'?'left':'right',fontSize:12,color:'#2d3752',letterSpacing:0.3,textTransform:'uppercase',borderBottom:'1px solid #d8d3c9',fontFamily:'DM Sans,sans-serif',fontWeight:500}}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map((r,i)=>(
+                      <tr key={r.catLabel} style={{background:i%2===0?'#ffffff':'#f5f4f0'}}>
+                        <td style={{padding:'9px 14px',fontSize:13,color:'#0a0f1e',borderBottom:'1px solid #d8d3c9',fontFamily:'DM Sans,sans-serif'}}>{r.catLabel}</td>
+                        <td style={{padding:'9px 14px',fontSize:13,color:'#c8934a',textAlign:'right',borderBottom:'1px solid #d8d3c9',fontFamily:'DM Sans,sans-serif',fontWeight:500}}>{r.lastFW?FW_LABEL(Number(r.lastFW)):'—'}</td>
+                        <td style={{padding:'9px 14px',fontSize:13,color:'#0a0f1e',textAlign:'right',borderBottom:'1px solid #d8d3c9',fontFamily:'DM Sans,sans-serif'}}>{r.cases}</td>
+                        <td style={{padding:'9px 14px',fontSize:13,color:'#0a0f1e',textAlign:'right',borderBottom:'1px solid #d8d3c9',fontFamily:'DM Sans,sans-serif'}}>{r.pieces}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                </div>
+              </div>
+            );
+          })()}
           </div>
         </div>
       )}
