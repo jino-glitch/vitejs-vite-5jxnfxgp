@@ -989,7 +989,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
 
       while(iterations < 5){
         iterations++;
-        const resp = await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":ANTHROPIC_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1024,system:systemPrompt,messages,tools:CHAT_TOOLS})});
+        const resp = await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":ANTHROPIC_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify({model:"claude-sonnet-4-5",max_tokens:1024,system:systemPrompt,messages,tools:CHAT_TOOLS})});
         const data = await resp.json();
         if(data.error) { finalReply = data.error.message||"API error."; break; }
 
