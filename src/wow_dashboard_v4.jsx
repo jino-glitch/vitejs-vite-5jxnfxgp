@@ -2628,8 +2628,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                 )}
                 {chatMessages.map((m,i)=>(
                   <div key={i} style={{display:"flex",justifyContent:m.role==="user"?"flex-end":"flex-start"}}>
-                    <div style={{maxWidth:"85%",padding:isMobile?"10px 14px":"8px 12px",borderRadius:8,background:m.role==="user"?"#c8934a":"#ede9e3",border:"1px solid "+(m.role==="user"?"#c8934a":"#d81e30"),fontSize:isMobile?12:11,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif",lineHeight:1.6,whiteSpace:"pre-wrap"}}>{m.role==="assistant" ? React.createElement("span", {dangerouslySetInnerHTML:{__html:m.content.replace(/**(.+?)**/g,"<strong>$1</strong>").replace(/
-/g,"<br/>").replace(/^- /gm,"• ")}}) : m.content}</div>
+                    <div style={{maxWidth:"85%",padding:isMobile?"10px 14px":"8px 12px",borderRadius:8,background:m.role==="user"?"#c8934a":"#ede9e3",border:"1px solid "+(m.role==="user"?"#c8934a":"#d81e30"),fontSize:isMobile?12:11,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif",lineHeight:1.6,whiteSpace:"pre-wrap"}}>{m.role==="assistant" ? React.createElement("span", {dangerouslySetInnerHTML:{__html:m.content.replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>").replace(/\n/g,"<br/>").replace(/^- /gm,"\u2022 ")}}) : m.content}</div>
                   </div>
                 ))}
                 {chatLoading&&(
