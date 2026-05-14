@@ -1767,18 +1767,18 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
             },0);
             return (
               <div style={{background:'#ffffff',border:'1px solid #d8d3c9',borderRadius:10,overflow:'hidden',marginTop:20}}>
-                <div style={{padding:'10px 16px',background:'#ede9e3',borderBottom:'1px solid #d8d3c9',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                <div style={{padding:'6px 16px',background:'#ede9e3',borderBottom:'1px solid #d8d3c9',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
                   <span style={{fontSize:13,color:'#7c3aed',letterSpacing:0.5,textTransform:'uppercase',fontFamily:'DM Sans,sans-serif',fontWeight:600}}>Cases Received by Category · Store {storeSearch}</span>
                 </div>
                 <div style={{overflowX:'auto'}}>
-                <table style={{width:'100%',borderCollapse:'collapse',minWidth:600}}>
+                <table style={{width:'100%',borderCollapse:'separate',borderSpacing:0,minWidth:600}}>
                   <thead>
                     <tr style={{background:'#ede9e3'}}>
-                      <th style={{padding:'8px 14px',textAlign:'left',fontSize:12,color:'#2d3752',letterSpacing:0.3,textTransform:'uppercase',borderBottom:'1px solid #d8d3c9',fontFamily:'DM Sans,sans-serif',fontWeight:500,minWidth:100}}>Category</th>
+                      <th style={{padding:'5px 14px',textAlign:'left',fontSize:12,color:'#2d3752',letterSpacing:0.3,textTransform:'uppercase',borderBottom:'1px solid #d8d3c9',fontFamily:'DM Sans,sans-serif',fontWeight:500,minWidth:100,position:'sticky',left:0,background:'#ede9e3',zIndex:2}}>Category</th>
                       {ALL_FWS.map(fw=>(
-                        <th key={fw} style={{padding:'8px 10px',textAlign:'center',fontSize:11,color:'#2d3752',letterSpacing:0.3,textTransform:'uppercase',borderBottom:'1px solid #d8d3c9',fontFamily:'DM Sans,sans-serif',fontWeight:500,minWidth:48}}>{FW_LABEL(fw)}</th>
+                        <th key={fw} style={{padding:'5px 10px',textAlign:'center',fontSize:11,color:'#2d3752',letterSpacing:0.3,textTransform:'uppercase',borderBottom:'1px solid #d8d3c9',fontFamily:'DM Sans,sans-serif',fontWeight:500,minWidth:48}}>{FW_LABEL(fw)}</th>
                       ))}
-                      <th style={{padding:'8px 14px',textAlign:'right',fontSize:12,color:'#7c3aed',letterSpacing:0.3,textTransform:'uppercase',borderBottom:'1px solid #d8d3c9',fontFamily:'DM Sans,sans-serif',fontWeight:600}}>Total</th>
+                      <th style={{padding:'5px 14px',textAlign:'right',fontSize:12,color:'#7c3aed',letterSpacing:0.3,textTransform:'uppercase',borderBottom:'1px solid #d8d3c9',fontFamily:'DM Sans,sans-serif',fontWeight:600}}>Total</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1788,32 +1788,32 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                       if (total===0) return null;
                       return (
                         <tr key={catKey} style={{background:ri%2===0?'#ffffff':'#f5f4f0'}}>
-                          <td style={{padding:'9px 14px',fontSize:13,color:'#0a0f1e',borderBottom:'1px solid #d8d3c9',fontFamily:'DM Sans,sans-serif',whiteSpace:'nowrap'}}>{catLabel}</td>
+                          <td style={{padding:'5px 14px',fontSize:13,color:'#0a0f1e',borderBottom:'1px solid #d8d3c9',fontFamily:'DM Sans,sans-serif',whiteSpace:'nowrap',position:'sticky',left:0,background:'inherit',zIndex:1}}>{catLabel}</td>
                           {ALL_FWS.map(fw=>{
                             const v = sd[String(fw)];
                             const cases = v?v[0]:0;
                             const intensity = maxIntensity>0?cases/maxIntensity:0;
                             const bg = cases>0?`rgba(124,58,237,${0.15+intensity*0.6})`:'transparent';
                             return (
-                              <td key={fw} style={{padding:'9px 10px',textAlign:'center',fontSize:12,fontWeight:cases>0?700:400,color:cases>0?'#3b1f8c':'#9aa3bd',borderBottom:'1px solid #d8d3c9',fontFamily:'DM Sans,sans-serif',background:bg}}>
+                              <td key={fw} style={{padding:'5px 10px',textAlign:'center',fontSize:12,fontWeight:cases>0?700:400,color:cases>0?'#3b1f8c':'#9aa3bd',borderBottom:'1px solid #d8d3c9',fontFamily:'DM Sans,sans-serif',background:bg}}>
                                 {cases>0?cases:'—'}
                               </td>
                             );
                           })}
-                          <td style={{padding:'9px 14px',textAlign:'right',fontSize:13,fontWeight:700,color:'#7c3aed',borderBottom:'1px solid #d8d3c9',fontFamily:'DM Sans,sans-serif'}}>{total}</td>
+                          <td style={{padding:'5px 14px',textAlign:'right',fontSize:13,fontWeight:700,color:'#7c3aed',borderBottom:'1px solid #d8d3c9',fontFamily:'DM Sans,sans-serif'}}>{total}</td>
                         </tr>
                       );
                     })}
                     <tr style={{background:'#ede9e3'}}>
-                      <td style={{padding:'9px 14px',fontSize:13,fontWeight:700,color:'#0a0f1e',borderBottom:'1px solid #d8d3c9',fontFamily:'DM Sans,sans-serif'}}>TOTAL</td>
+                      <td style={{padding:'5px 14px',fontSize:13,fontWeight:700,color:'#0a0f1e',borderBottom:'1px solid #d8d3c9',fontFamily:'DM Sans,sans-serif',position:'sticky',left:0,background:'#ede9e3',zIndex:1}}>TOTAL</td>
                       {ALL_FWS.map(fw=>{
                         const tot = cats.reduce((a,[k])=>{
                           const v=STORE_OUTBOUND[k]?.[storeNum]?.[String(fw)];
                           return a+(v?v[0]:0);
                         },0);
-                        return <td key={fw} style={{padding:'9px 10px',textAlign:'center',fontSize:12,fontWeight:700,color:tot>0?'#0a0f1e':'#9aa3bd',borderBottom:'1px solid #d8d3c9',fontFamily:'DM Sans,sans-serif'}}>{tot>0?tot:'—'}</td>;
+                        return <td key={fw} style={{padding:'5px 10px',textAlign:'center',fontSize:12,fontWeight:700,color:tot>0?'#0a0f1e':'#9aa3bd',borderBottom:'1px solid #d8d3c9',fontFamily:'DM Sans,sans-serif'}}>{tot>0?tot:'—'}</td>;
                       })}
-                      <td style={{padding:'9px 14px',textAlign:'right',fontSize:13,fontWeight:700,color:'#7c3aed',borderBottom:'1px solid #d8d3c9',fontFamily:'DM Sans,sans-serif'}}>
+                      <td style={{padding:'5px 14px',textAlign:'right',fontSize:13,fontWeight:700,color:'#7c3aed',borderBottom:'1px solid #d8d3c9',fontFamily:'DM Sans,sans-serif'}}>
                         {cats.reduce((a,[k])=>a+Object.values(STORE_OUTBOUND[k]?.[storeNum]||{}).reduce((b,v)=>b+v[0],0),0)}
                       </td>
                     </tr>
