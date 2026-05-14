@@ -257,7 +257,7 @@ export default function App() {
   const [customFrom, setCustomFrom] = useState(ALL_FWS_FULL[0]);
   const [customTo, setCustomTo] = useState(ALL_FWS_FULL[ALL_FWS_FULL.length-1]);
   const [trendMetric, setTrendMetric] = useState("sales");
-  const [trendView, setTrendView] = useState("total");
+  const [trendView, setTrendView] = useState("yoy");
   const [storeSearch, setStoreSearch] = useState("");
   const [storeSortKey, setStoreSortKey] = useState("sales");
   const [storeWkFilter, setStoreWkFilter] = useState([...ALL_FWS_FULL]);
@@ -272,7 +272,7 @@ export default function App() {
   const [expandedDistrict, setExpandedDistrict] = useState(null);
   const [expandedStore, setExpandedStore] = useState(null);
   const [insightsOpen, setInsightsOpen] = useState(false);
-  const [insightsTab, setInsightsTab] = useState("cards");
+  const [insightsTab, setInsightsTab] = useState("chat");
   const [chatMessages, setChatMessages] = useState([]);
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
@@ -1604,7 +1604,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
               <button key={k} onClick={()=>setTrendMetric(k)} style={{padding:"5px 14px",background:trendMetric===k?"#c8934a":"#ffffff",border:"1px solid "+(trendMetric===k?"#c8934a":"#d83a5a"),color:trendMetric===k?"#fff":"#5a8aaa",borderRadius:6,cursor:"pointer",fontSize:13,fontFamily:"DM Sans,sans-serif"}}>{l}</button>
             ))}
             <div style={{marginLeft:16,fontSize:13,color:"#2d3752"}}>VIEW:</div>
-            {[["total","Total"],["bydc","By DC"],["yoy","FY26 vs FY25"]].map(([k,l])=>(
+            {[["yoy","FY26 vs FY25"],["total","Total"],["bydc","By DC"]].map(([k,l])=>(
               <button key={k} onClick={()=>setTrendView(k)} style={{padding:"5px 14px",background:trendView===k?"#1a7a4e":"#ffffff",border:"1px solid "+(trendView===k?"#1a7a4e":"#d8d3c9"),color:trendView===k?"#2aff90":"#5a8aaa",borderRadius:6,cursor:"pointer",fontSize:13,fontFamily:"DM Sans,sans-serif"}}>{l}</button>
             ))}
           </div>
@@ -1756,6 +1756,74 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
             <div style={{marginLeft:"auto",fontSize:12,color:"#2d3752"}}>{storeAnalytics.length} stores shown</div>
           </div>
 
+          {/^\d+$/.test(storeSearch)&&storeSearch&&(()=>{
+            const storeNum = storeSearch;
+            const cats = [['5inch','5" Orchid'],['3inch','3" Orchid'],['fused','5" Fused'],['cascades','Cascades']];
+            const hasSomeData = cats.some(([k])=>STORE_OUTBOUND[k]?.[storeNum]);
+            if (!hasSomeData) return null;
+            const maxIntensity = cats.reduce((mx,[k])=>{
+              const sd=STORE_OUTBOUND[k]?.[storeNum]||{};
+              return Object.values(sd).reduce((m,v)=>Math.max(m,v[0]),mx);
+            },0);
+            return (
+              <div style={{background:'#ffffff',border:'1px solid #d8d3c9',borderRadius:10,overflow:'hidden',marginTop:20}}>
+                <div style={{padding:'10px 16px',background:'#ede9e3',borderBottom:'1px solid #d8d3c9',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                  <span style={{fontSize:13,color:'#7c3aed',letterSpacing:0.5,textTransform:'uppercase',fontFamily:'DM Sans,sans-serif',fontWeight:600}}>Cases Received by Category · Store {storeSearch}</span>
+                </div>
+                <div style={{overflowX:'auto'}}>
+                <table style={{width:'100%',borderCollapse:'collapse',minWidth:600}}>
+                  <thead>
+                    <tr style={{background:'#ede9e3'}}>
+                      <th style={{padding:'8px 14px',textAlign:'left',fontSize:12,color:'#2d3752',letterSpacing:0.3,textTransform:'uppercase',borderBottom:'1px solid #d8d3c9',fontFamily:'DM Sans,sans-serif',fontWeight:500,minWidth:100}}>Category</th>
+                      {ALL_FWS.map(fw=>(
+                        <th key={fw} style={{padding:'8px 10px',textAlign:'center',fontSize:11,color:'#2d3752',letterSpacing:0.3,textTransform:'uppercase',borderBottom:'1px solid #d8d3c9',fontFamily:'DM Sans,sans-serif',fontWeight:500,minWidth:48}}>{FW_LABEL(fw)}</th>
+                      ))}
+                      <th style={{padding:'8px 14px',textAlign:'right',fontSize:12,color:'#7c3aed',letterSpacing:0.3,textTransform:'uppercase',borderBottom:'1px solid #d8d3c9',fontFamily:'DM Sans,sans-serif',fontWeight:600}}>Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {cats.map(([catKey,catLabel],ri)=>{
+                      const sd = STORE_OUTBOUND[catKey]?.[storeNum]||{};
+                      const total = Object.values(sd).reduce((a,v)=>a+v[0],0);
+                      if (total===0) return null;
+                      return (
+                        <tr key={catKey} style={{background:ri%2===0?'#ffffff':'#f5f4f0'}}>
+                          <td style={{padding:'9px 14px',fontSize:13,color:'#0a0f1e',borderBottom:'1px solid #d8d3c9',fontFamily:'DM Sans,sans-serif',whiteSpace:'nowrap'}}>{catLabel}</td>
+                          {ALL_FWS.map(fw=>{
+                            const v = sd[String(fw)];
+                            const cases = v?v[0]:0;
+                            const intensity = maxIntensity>0?cases/maxIntensity:0;
+                            const bg = cases>0?`rgba(124,58,237,${0.15+intensity*0.6})`:'transparent';
+                            return (
+                              <td key={fw} style={{padding:'9px 10px',textAlign:'center',fontSize:12,fontWeight:cases>0?700:400,color:cases>0?'#3b1f8c':'#9aa3bd',borderBottom:'1px solid #d8d3c9',fontFamily:'DM Sans,sans-serif',background:bg}}>
+                                {cases>0?cases:'—'}
+                              </td>
+                            );
+                          })}
+                          <td style={{padding:'9px 14px',textAlign:'right',fontSize:13,fontWeight:700,color:'#7c3aed',borderBottom:'1px solid #d8d3c9',fontFamily:'DM Sans,sans-serif'}}>{total}</td>
+                        </tr>
+                      );
+                    })}
+                    <tr style={{background:'#ede9e3'}}>
+                      <td style={{padding:'9px 14px',fontSize:13,fontWeight:700,color:'#0a0f1e',borderBottom:'1px solid #d8d3c9',fontFamily:'DM Sans,sans-serif'}}>TOTAL</td>
+                      {ALL_FWS.map(fw=>{
+                        const tot = cats.reduce((a,[k])=>{
+                          const v=STORE_OUTBOUND[k]?.[storeNum]?.[String(fw)];
+                          return a+(v?v[0]:0);
+                        },0);
+                        return <td key={fw} style={{padding:'9px 10px',textAlign:'center',fontSize:12,fontWeight:700,color:tot>0?'#0a0f1e':'#9aa3bd',borderBottom:'1px solid #d8d3c9',fontFamily:'DM Sans,sans-serif'}}>{tot>0?tot:'—'}</td>;
+                      })}
+                      <td style={{padding:'9px 14px',textAlign:'right',fontSize:13,fontWeight:700,color:'#7c3aed',borderBottom:'1px solid #d8d3c9',fontFamily:'DM Sans,sans-serif'}}>
+                        {cats.reduce((a,[k])=>a+Object.values(STORE_OUTBOUND[k]?.[storeNum]||{}).reduce((b,v)=>b+v[0],0),0)}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+                </div>
+              </div>
+            );
+          })()}
+
           {/* Store KPIs */}
           <div style={{display:"flex",gap:10,flexWrap:"wrap",marginBottom:20}}>
             <KPI label={"Stores Active"} value={storeAnalytics.length.toString()}/>
@@ -1869,74 +1937,6 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
               </tbody>
             </table>
             </div>
-
-          {/^\d+$/.test(storeSearch)&&storeSearch&&(()=>{
-            const storeNum = storeSearch;
-            const cats = [['5inch','5" Orchid'],['3inch','3" Orchid'],['fused','5" Fused'],['cascades','Cascades']];
-            const hasSomeData = cats.some(([k])=>STORE_OUTBOUND[k]?.[storeNum]);
-            if (!hasSomeData) return null;
-            const maxIntensity = cats.reduce((mx,[k])=>{
-              const sd=STORE_OUTBOUND[k]?.[storeNum]||{};
-              return Object.values(sd).reduce((m,v)=>Math.max(m,v[0]),mx);
-            },0);
-            return (
-              <div style={{background:'#ffffff',border:'1px solid #d8d3c9',borderRadius:10,overflow:'hidden',marginTop:20}}>
-                <div style={{padding:'10px 16px',background:'#ede9e3',borderBottom:'1px solid #d8d3c9',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                  <span style={{fontSize:13,color:'#7c3aed',letterSpacing:0.5,textTransform:'uppercase',fontFamily:'DM Sans,sans-serif',fontWeight:600}}>Cases Received by Category · Store {storeSearch}</span>
-                </div>
-                <div style={{overflowX:'auto'}}>
-                <table style={{width:'100%',borderCollapse:'collapse',minWidth:600}}>
-                  <thead>
-                    <tr style={{background:'#ede9e3'}}>
-                      <th style={{padding:'8px 14px',textAlign:'left',fontSize:12,color:'#2d3752',letterSpacing:0.3,textTransform:'uppercase',borderBottom:'1px solid #d8d3c9',fontFamily:'DM Sans,sans-serif',fontWeight:500,minWidth:100}}>Category</th>
-                      {ALL_FWS.map(fw=>(
-                        <th key={fw} style={{padding:'8px 10px',textAlign:'center',fontSize:11,color:'#2d3752',letterSpacing:0.3,textTransform:'uppercase',borderBottom:'1px solid #d8d3c9',fontFamily:'DM Sans,sans-serif',fontWeight:500,minWidth:48}}>{FW_LABEL(fw)}</th>
-                      ))}
-                      <th style={{padding:'8px 14px',textAlign:'right',fontSize:12,color:'#7c3aed',letterSpacing:0.3,textTransform:'uppercase',borderBottom:'1px solid #d8d3c9',fontFamily:'DM Sans,sans-serif',fontWeight:600}}>Total</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {cats.map(([catKey,catLabel],ri)=>{
-                      const sd = STORE_OUTBOUND[catKey]?.[storeNum]||{};
-                      const total = Object.values(sd).reduce((a,v)=>a+v[0],0);
-                      if (total===0) return null;
-                      return (
-                        <tr key={catKey} style={{background:ri%2===0?'#ffffff':'#f5f4f0'}}>
-                          <td style={{padding:'9px 14px',fontSize:13,color:'#0a0f1e',borderBottom:'1px solid #d8d3c9',fontFamily:'DM Sans,sans-serif',whiteSpace:'nowrap'}}>{catLabel}</td>
-                          {ALL_FWS.map(fw=>{
-                            const v = sd[String(fw)];
-                            const cases = v?v[0]:0;
-                            const intensity = maxIntensity>0?cases/maxIntensity:0;
-                            const bg = cases>0?`rgba(124,58,237,${0.15+intensity*0.6})`:'transparent';
-                            return (
-                              <td key={fw} style={{padding:'9px 10px',textAlign:'center',fontSize:12,fontWeight:cases>0?700:400,color:cases>0?'#3b1f8c':'#9aa3bd',borderBottom:'1px solid #d8d3c9',fontFamily:'DM Sans,sans-serif',background:bg}}>
-                                {cases>0?cases:'—'}
-                              </td>
-                            );
-                          })}
-                          <td style={{padding:'9px 14px',textAlign:'right',fontSize:13,fontWeight:700,color:'#7c3aed',borderBottom:'1px solid #d8d3c9',fontFamily:'DM Sans,sans-serif'}}>{total}</td>
-                        </tr>
-                      );
-                    })}
-                    <tr style={{background:'#ede9e3'}}>
-                      <td style={{padding:'9px 14px',fontSize:13,fontWeight:700,color:'#0a0f1e',borderBottom:'1px solid #d8d3c9',fontFamily:'DM Sans,sans-serif'}}>TOTAL</td>
-                      {ALL_FWS.map(fw=>{
-                        const tot = cats.reduce((a,[k])=>{
-                          const v=STORE_OUTBOUND[k]?.[storeNum]?.[String(fw)];
-                          return a+(v?v[0]:0);
-                        },0);
-                        return <td key={fw} style={{padding:'9px 10px',textAlign:'center',fontSize:12,fontWeight:700,color:tot>0?'#0a0f1e':'#9aa3bd',borderBottom:'1px solid #d8d3c9',fontFamily:'DM Sans,sans-serif'}}>{tot>0?tot:'—'}</td>;
-                      })}
-                      <td style={{padding:'9px 14px',textAlign:'right',fontSize:13,fontWeight:700,color:'#7c3aed',borderBottom:'1px solid #d8d3c9',fontFamily:'DM Sans,sans-serif'}}>
-                        {cats.reduce((a,[k])=>a+Object.values(STORE_OUTBOUND[k]?.[storeNum]||{}).reduce((b,v)=>b+v[0],0),0)}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-                </div>
-              </div>
-            );
-          })()}
           </div>
         </div>
       )}
