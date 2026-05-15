@@ -2393,6 +2393,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                       ALL_FWS.forEach(fw=>{ totals[fw]=0; });
                       let grandTot = 0;
 
+                      let rowIdx = 0;
                       cats.forEach((cat,ci)=>{
                         let rowVals;
                         if(searchedStore) {
@@ -2416,10 +2417,12 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                         grandTot += rowTotal;
                         rowVals.forEach((v,i)=>{ totals[ALL_FWS[i]]+=v; });
                         const maxVal = Math.max(...rowVals,1);
+                        const rowBg = rowIdx%2===0?"#ffffff":"#f5f4f0";
+                        rowIdx++;
 
                         rows.push(
-                          <tr key={cat} style={{background:ci%2===0?"#ffffff":"#f5f4f0"}}>
-                            <td style={{padding:"9px 14px",fontSize:14,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif",borderBottom:"1px solid #d8d3c9",whiteSpace:"nowrap",position:"sticky",left:0,background:"inherit",zIndex:1,boxShadow:"2px 0 4px rgba(0,0,0,0.06)"}}>{catLabels[cat]}</td>
+                          <tr key={cat} style={{background:rowBg}}>
+                            <td style={{padding:"9px 14px",fontSize:14,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif",borderBottom:"1px solid #d8d3c9",whiteSpace:"nowrap",position:"sticky",left:0,background:rowBg,zIndex:1,boxShadow:"2px 0 4px rgba(0,0,0,0.06)"}}>{catLabels[cat]}</td>
                             {rowVals.map((v,i)=>{
                               const intensity = v>0 ? Math.max(0.15, v/maxVal) : 0;
                               return (
