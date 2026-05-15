@@ -2383,11 +2383,18 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                   </thead>
                   <tbody>
                     {(()=>{
-                      const cats = ["5in Orchid","3in Orchid","2in Orchid","5in Fused","Cascades","Arrangement","Lavender"];
-                      const catLabels = {"5in Orchid":"5\" Orchid","3in Orchid":"3\" Orchid","2in Orchid":"2\" Orchid","5in Fused":"5\" Fused","Cascades":"Cascades","Arrangement":"Arrangement","Lavender":"Lavender"};
-                      // Map matrix cat label → STORE_OUTBOUND key
-                      const catToOutboundKey = {"5in Orchid":"5inch","3in Orchid":"3inch","2in Orchid":null,"5in Fused":"fused","Cascades":"cascades","Arrangement":null,"Lavender":null};
                       const searchedStore = /^\d+$/.test(allocSearch.trim()) ? allocSearch.trim() : null;
+                      // Build cat list dynamically from DELIVERY_MATRIX + STORE_OUTBOUND
+                      const catToOutboundKey = {"5in Orchid":"5inch","3in Orchid":"3inch","2in Orchid":"2inch","5in Fused":"fused","Cascades":"cascades","Arrangements":"arrangements","Lavender":null};
+                      const catLabels = {"5in Orchid":"5\" Orchid","3in Orchid":"3\" Orchid","2in Orchid":"2\" Orchid (Mini)","5in Fused":"5\" Fused","Cascades":"Cascades","Arrangements":"Arrangements","Lavender":"Lavender"};
+                      const dmCats = new Set();
+                      allocDC.forEach(dc=>{ if(DELIVERY_MATRIX[dc]) Object.keys(DELIVERY_MATRIX[dc]).forEach(c=>dmCats.add(c)); });
+                      const obCats = new Set(Object.keys(STORE_OUTBOUND));
+                      const catOrder = ["5in Orchid","3in Orchid","2in Orchid","5in Fused","Cascades","Arrangements","Lavender"];
+                      const cats = catOrder.filter(c=>{
+                        if(searchedStore) return catToOutboundKey[c] && obCats.has(catToOutboundKey[c]);
+                        return dmCats.has(c);
+                      });
                       const rows = [];
                       const totals = {};
                       ALL_FWS.forEach(fw=>{ totals[fw]=0; });
