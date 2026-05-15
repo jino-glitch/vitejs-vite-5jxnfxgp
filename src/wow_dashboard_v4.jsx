@@ -1240,7 +1240,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
   };
 
   const isMobile = typeof window!=="undefined"&&window.innerWidth<640;
-  const tabS = active => ({padding:isMobile?"6px 8px":"10px 22px",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:isMobile?9:11,letterSpacing:isMobile?0.3:1.2,borderRadius:6,border:"none",background:active?"#c8934a":"transparent",color:active?"#fff":"#3a6a8a",transition:"all 0.15s",whiteSpace:"nowrap",flexShrink:0});
+  const tabS = active => ({padding:isMobile?"8px 10px":"12px 22px",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:isMobile?12:14,letterSpacing:isMobile?0.3:0.8,borderRadius:6,border:"none",background:active?"#c8934a":"transparent",color:active?"#fff":"#3a6a8a",transition:"all 0.15s",whiteSpace:"nowrap",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"});
   const tdS = (align,color) => ({padding:"9px 14px",textAlign:align||"left",fontSize:14,color:color||"#0a0f1e",fontFamily:"'DM Sans',sans-serif",borderBottom:"1px solid #d8d3c9"});
 
   const dashboard = (
