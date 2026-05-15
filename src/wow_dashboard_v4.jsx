@@ -2684,7 +2684,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
               : <span style={{fontSize:12,color:"#5c6584",fontFamily:"DM Sans,sans-serif"}}>Click or drop to upload &nbsp;·&nbsp; Expects: Store · City · State · Floral Mix to TTL (.xlsx)</span>
             }
             {skuFile&&(
-              <button onClick={handleSkuDownload} style={{marginLeft:"auto",background:"#0f766e",border:"none",borderRadius:5,padding:"4px 12px",cursor:"pointer",fontSize:11,color:"#fff",fontFamily:"DM Sans,sans-serif",fontWeight:600}} onClickCapture={e=>e.stopPropagation()}>⬇ Download XLSX</button>
+              <button onClick={e=>{e.stopPropagation();handleSkuDownload();}} style={{marginLeft:"auto",background:"#0f766e",border:"none",borderRadius:5,padding:"4px 12px",cursor:"pointer",fontSize:11,color:"#fff",fontFamily:"DM Sans,sans-serif",fontWeight:600}}>⬇ Download XLSX</button>
             )}
             <input id="skuFileInput" type="file" accept=".xlsx" style={{display:"none"}} onChange={e=>{if(e.target.files[0]){handleSkuUpload(e.target.files[0]);e.target.value=null;}}}/>
           </div>
