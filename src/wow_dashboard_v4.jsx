@@ -2544,7 +2544,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
             <span style={{fontSize:14,fontWeight:700,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif",letterSpacing:0.3}}>INSIGHTS</span>
             <div style={{marginLeft:"auto",display:"flex",gap:6,alignItems:"center"}}>
               {[["chat","Ask"],["cards","Quick Insights"]].map(([k,l])=>(
-                <button key={k} onClick={()=>setInsightsTab(k)} style={{padding:isMobile?"5px 14px":"4px 12px",background:insightsTab===k?"#c8934a":"transparent",border:"1px solid "+(insightsTab===k?"#c8934a":"#d8d3c9"),color:insightsTab===k?"#fff":"#2d3752",borderRadius:5,cursor:"pointer",fontSize:isMobile?10:9,fontFamily:"DM Sans,sans-serif",letterSpacing:0.2}}>{l}</button>
+                <button key={k} onClick={()=>setInsightsTab(k)} style={{padding:isMobile?"8px 18px":"7px 16px",background:insightsTab===k?"#c8934a":"transparent",border:"1px solid "+(insightsTab===k?"#c8934a":"#d8d3c9"),color:insightsTab===k?"#fff":"#2d3752",borderRadius:5,cursor:"pointer",fontSize:isMobile?13:12,fontFamily:"DM Sans,sans-serif",letterSpacing:0.2}}>{l}</button>
               ))}
               {isMobile&&(
                 <button onClick={()=>setInsightsOpen(false)} style={{marginLeft:6,background:"#e4ddd4",border:"none",borderRadius:20,width:32,height:32,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:"#0a0f1e",fontSize:17,flexShrink:0}}>✕</button>
@@ -2654,7 +2654,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                 )}
                 {chatMessages.map((m,i)=>(
                   <div key={i} style={{display:"flex",justifyContent:m.role==="user"?"flex-end":"flex-start"}}>
-                    <div style={{maxWidth:"85%",padding:isMobile?"10px 14px":"10px 14px",borderRadius:8,background:m.role==="user"?"#c8934a":"#ede9e3",border:"1px solid "+(m.role==="user"?"#c8934a":"#d81e30"),fontSize:isMobile?14:13,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif",lineHeight:1.7,whiteSpace:"pre-wrap"}}>{m.role==="assistant" ? React.createElement("span", {dangerouslySetInnerHTML:{__html:m.content.replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>").replace(/\n/g,"<br/>").replace(/^- /gm,"\u2022 ")}}) : m.content}</div>
+                    <div style={{maxWidth:"85%",padding:isMobile?"10px 14px":"10px 14px",borderRadius:8,background:m.role==="user"?"#c8934a":"#ede9e3",border:"1px solid "+(m.role==="user"?"#c8934a":"#d81e30"),fontSize:isMobile?14:13,color:m.role==="user"?"#fff":"#0a0f1e",fontFamily:"DM Sans,sans-serif",lineHeight:1.7,whiteSpace:"pre-wrap"}}>{m.role==="assistant" ? React.createElement("span", {dangerouslySetInnerHTML:{__html:m.content.replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>").replace(/\n/g,"<br/>").replace(/^- /gm,"\u2022 ")}}) : m.content}</div>
                   </div>
                 ))}
                 {chatLoading&&(
