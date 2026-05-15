@@ -1331,7 +1331,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
             <KPI label={"ST% WoW Chg"} value={stDelta!=null?fmtP(stDelta):"—"} delta={stDelta} pct={null}/>
           </div>
 
-          <TopBottom3 rows={prodTable} nameKey="prod" valueKey="sales" label="Sales This Week" fmt={fmt$}/>
+          {/* TopBottom3 hidden */}
 
           <div style={{display:"grid",gridTemplateColumns:"1fr",gap:20}}>
             {/* By Product - WoW */}
@@ -1429,7 +1429,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
             <KPI label={"ST% YoY Chg"} value={(thisST!=null&&lyST!=null)?fmtP(thisST-lyST):"—"} delta={thisST!=null&&lyST!=null?thisST-lyST:null} pct={null}/>
           </div>
 
-          <TopBottom3 rows={prodTable} nameKey="prod" valueKey="yd" label="YoY $ Change" fmt={fmtD}/>
+          {/* TopBottom3 hidden */}
 
           <div style={{display:"grid",gridTemplateColumns:"1fr",gap:20}}>
             {/* By Product - YoY */}
@@ -1524,7 +1524,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
             <KPI label="ST% YoY Δ" value={(ytdST26!=null&&ytdST25!=null)?fmtP(ytdST26-ytdST25):"—"} delta={ytdST26!=null&&ytdST25!=null?ytdST26-ytdST25:null} pct={null}/>
           </div>
 
-          <TopBottom3 rows={ytdByProd} nameKey="prod" valueKey="s26" label="YTD Sales FY26" fmt={fmt$}/>
+          {/* TopBottom3 hidden */}
 
           <div style={{display:"grid",gridTemplateColumns:"1fr",gap:20}}>
             {/* YTD by DC */}
