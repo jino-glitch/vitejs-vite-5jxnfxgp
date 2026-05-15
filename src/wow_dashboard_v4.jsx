@@ -2370,12 +2370,11 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
             <div style={{fontSize:13,color:"#7c3aed",letterSpacing:0.5,textTransform:"uppercase",marginBottom:12,fontFamily:"DM Sans,sans-serif"}}>
               {allocSearch.trim() ? "Cases Received by Category · Store #"+allocSearch.trim()+" · Fiscal Week" : "Cases Received by Category · Fiscal Week"}
             </div>
-            <div style={{background:"#ffffff",border:"1px solid #d8d3c9",borderRadius:10,overflow:"hidden"}}>
-              <div style={{overflowX:"auto"}}>
+            <div style={{overflowX:"auto",border:"1px solid #d8d3c9",borderRadius:10,WebkitOverflowScrolling:"touch"}}>
                 <table style={{width:"100%",borderCollapse:"separate",borderSpacing:0,minWidth:700}}>
                   <thead>
                     <tr style={{background:"#ede9e3"}}>
-                      <th style={{padding:"10px 14px",textAlign:"left",fontSize:12,color:"#2d3752",fontFamily:"DM Sans,sans-serif",letterSpacing:0.3,textTransform:"uppercase",borderBottom:"1px solid #d8d3c9",whiteSpace:"nowrap",minWidth:120,position:"sticky",left:0,background:"#ede9e3",zIndex:2}}}>Category</th>
+                      <th style={{padding:"10px 14px",textAlign:"left",fontSize:12,color:"#2d3752",fontFamily:"DM Sans,sans-serif",letterSpacing:0.3,textTransform:"uppercase",borderBottom:"1px solid #d8d3c9",whiteSpace:"nowrap",minWidth:120,position:"sticky",left:0,background:"#ede9e3",zIndex:2,boxShadow:"2px 0 4px rgba(0,0,0,0.06)"}}>Category</th>
                       {ALL_FWS.map(fw=>(
                         <th key={fw} style={{padding:"10px 10px",textAlign:"center",fontSize:12,color:"#2d3752",fontFamily:"DM Sans,sans-serif",letterSpacing:0.2,textTransform:"uppercase",borderBottom:"1px solid #d8d3c9",whiteSpace:"nowrap"}}>{"FW"+String(fw).slice(-2)}</th>
                       ))}
@@ -2420,7 +2419,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
 
                         rows.push(
                           <tr key={cat} style={{background:ci%2===0?"#ffffff":"#f5f4f0"}}>
-                            <td style={{padding:"9px 14px",fontSize:14,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif",borderBottom:"1px solid #d8d3c9",whiteSpace:"nowrap",position:"sticky",left:0,background:"inherit",zIndex:1}}>{catLabels[cat]}</td>
+                            <td style={{padding:"9px 14px",fontSize:14,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif",borderBottom:"1px solid #d8d3c9",whiteSpace:"nowrap",position:"sticky",left:0,background:"inherit",zIndex:1,boxShadow:"2px 0 4px rgba(0,0,0,0.06)"}}>{catLabels[cat]}</td>
                             {rowVals.map((v,i)=>{
                               const intensity = v>0 ? Math.max(0.15, v/maxVal) : 0;
                               return (
@@ -2438,7 +2437,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                       // Total row
                       rows.push(
                         <tr key="total" style={{background:"#ede9e3",borderTop:"1px solid #d8d3c9"}}>
-                          <td style={{padding:"10px 14px",fontSize:13,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif",fontWeight:700,letterSpacing:0.2,position:"sticky",left:0,background:"#ede9e3",zIndex:1}}>TOTAL</td>
+                          <td style={{padding:"10px 14px",fontSize:13,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif",fontWeight:700,letterSpacing:0.2,position:"sticky",left:0,background:"#ede9e3",zIndex:1,boxShadow:"2px 0 4px rgba(0,0,0,0.06)"}}>TOTAL</td>
                           {ALL_FWS.map(fw=>(
                             <td key={fw} style={{padding:"10px 10px",textAlign:"center",fontSize:14,fontWeight:700,color:totals[fw]>0?"#0a0f1e":"#2d3752",fontFamily:"DM Sans,sans-serif"}}>{totals[fw]>0?totals[fw]:"—"}</td>
                           ))}
@@ -2449,7 +2448,6 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                     })()}
                   </tbody>
                 </table>
-              </div>
             </div>
           </div>
 
