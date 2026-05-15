@@ -1027,7 +1027,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
   };
 
 
-  // ── ALLOCATIONS (IN & OUT) UPLOAD ─────────────────────────────────────────────────────
+  // ── ALLOCATIONS (IN&OUT) UPLOAD ─────────────────────────────────────────────────────
   const loadXLSX = () => new Promise((res, rej) => {
     if (window.XLSX) { res(window.XLSX); return; }
     const s = document.createElement("script");
@@ -1053,7 +1053,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
     const ws = XLSX.utils.aoa_to_sheet(wsData);
     ws["!cols"] = [{wch:14},{wch:12},{wch:24},{wch:8},{wch:52},{wch:12}];
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Allocations (In & Out)");
+    XLSX.utils.book_append_sheet(wb, ws, "Allocations (In&Out)");
     const outName = skuFile.name.replace(/\.xlsx$/i,"") + "_enriched.xlsx";
     XLSX.writeFile(wb, outName);
   };
@@ -1322,7 +1322,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
       </div>
 
       {/* Date Presets */}
-      <div style={{background:"#f5f4f0",borderBottom:"1px solid #d8d3c9",padding:"10px 28px",display:tab==="alloc"?"none":"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
+      <div style={{background:"#f5f4f0",borderBottom:"1px solid #d8d3c9",padding:"10px 28px",display:tab==="alloc"||tab==="sku"?"none":"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
         <span style={{fontSize:12,color:"#2d3752",fontFamily:"DM Sans,sans-serif",letterSpacing:0.3,marginRight:4}}>DATE RANGE:</span>
         {[["last4","Last 4 Wks"],["last8","Last 8 Wks"],["ytd","Full YTD"],["custom","Custom"]].map(([key,lbl])=>(
           <button key={key} onClick={()=>applyPreset(key)} style={{padding:"5px 14px",background:datePreset===key?"#c8934a":"#ffffff",border:"1px solid "+(datePreset===key?"#c8934a":"#d8d3c9"),color:datePreset===key?"#fff":"#2d3752",borderRadius:6,cursor:"pointer",fontSize:13,fontFamily:"DM Sans,sans-serif",transition:"all 0.15s"}}>{lbl}</button>
@@ -1345,7 +1345,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
       </div>
 
       {/* Filters */}
-      <div style={{background:"#ffffff",borderBottom:"1px solid #d8d3c9",padding:"12px 28px",display:tab==="alloc"?"none":"flex",gap:10,flexWrap:"wrap",alignItems:"center"}}>
+      <div style={{background:"#ffffff",borderBottom:"1px solid #d8d3c9",padding:"12px 28px",display:tab==="alloc"||tab==="sku"?"none":"flex",gap:10,flexWrap:"wrap",alignItems:"center"}}>
         <MultiSelect label="DC" options={ALL_DCS} selected={selDC} onChange={setSelDC}/>
         <MultiSelect label="Product" options={ALL_PRODUCTS_SORTED} selected={selProd} onChange={setSelProd}/>
         <MultiSelect label="Vendor" options={ALL_VENDORS_SORTED} selected={selVendor} onChange={setSelVendor}/>
@@ -1370,7 +1370,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
         <button style={tabS(tab==="stores")} onClick={()=>setTab("stores")}>Store Analytics</button>
         <button style={tabS(tab==="district")} onClick={()=>setTab("district")}>Districts</button>
         <button style={{...tabS(tab==="alloc"),background:tab==="alloc"?"#7c3aed":"transparent",border:tab==="alloc"?"1px solid #7c3aed":"1px solid transparent"}} onClick={()=>setTab("alloc")}>Allocations</button>
-        <button style={{...tabS(tab==="sku"),background:tab==="sku"?"#0f766e":"transparent",border:tab==="sku"?"1px solid #0f766e":"1px solid transparent",color:tab==="sku"?"#fff":"#2d3752"}} onClick={()=>setTab("sku")}>Allocations (In & Out)</button>
+        <button style={{...tabS(tab==="sku"),background:tab==="sku"?"#0f766e":"transparent",border:tab==="sku"?"1px solid #0f766e":"1px solid transparent",color:tab==="sku"?"#fff":"#2d3752"}} onClick={()=>setTab("sku")}>Allocations (In&Out)</button>
       </div>
 
       <div style={{padding:isMobile?"12px 12px":"24px 28px"}}>
@@ -2604,36 +2604,34 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
       )}
       </div>
 
-      {/* Allocations (In & Out) Tab */}
+      {/* Allocations (In&Out) Tab */}
       {tab==="sku"&&(
         <div style={{padding:isMobile?"12px 12px":"24px 28px"}}>
           <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}>
             <div style={{width:4,height:24,background:"#0f766e",borderRadius:2}}/>
-            <span style={{fontSize:16,fontWeight:700,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif",letterSpacing:0.3}}>ALLOCATIONS (IN & OUT)</span>
+            <span style={{fontSize:16,fontWeight:700,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif",letterSpacing:0.3}}>ALLOCATIONS (IN&OUT)</span>
             <span style={{fontSize:11,color:"#5c6584",fontFamily:"DM Sans,sans-serif",marginLeft:4}}>Upload a store-level floral mix file to enrich with DC / District data</span>
           </div>
-          {!skuFile&&(
-            <div
-              onDragOver={e=>{e.preventDefault();setSkuDragOver(true);}}
-              onDragLeave={()=>setSkuDragOver(false)}
-              onDrop={e=>{e.preventDefault();setSkuDragOver(false);const f=e.dataTransfer.files[0];if(f)handleSkuUpload(f);}}
-              style={{border:"2px dashed "+(skuDragOver?"#0f766e":"#d8d3c9"),borderRadius:12,padding:"48px 24px",textAlign:"center",background:skuDragOver?"#f0fdf9":"#fafaf8",cursor:"pointer",transition:"all 0.2s",marginBottom:24}}
-              onClick={()=>document.getElementById("skuFileInput").click()}
-            >
-              <div style={{fontSize:32,marginBottom:12}}>📂</div>
-              <div style={{fontSize:14,fontWeight:600,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif",marginBottom:6}}>Drop your file here or click to browse</div>
-              <div style={{fontSize:11,color:"#5c6584",fontFamily:"DM Sans,sans-serif"}}>Expects columns: Store · City · State · Floral Mix to TTL (.xlsx)</div>
-              <input id="skuFileInput" type="file" accept=".xlsx" style={{display:"none"}} onChange={e=>{if(e.target.files[0])handleSkuUpload(e.target.files[0]);}}/>
-            </div>
-          )}
-          {skuFile&&(
-            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16,padding:"10px 16px",background:"#f0fdf9",border:"1px solid #99f6e4",borderRadius:8}}>
-              <span style={{fontSize:13,color:"#0f766e",fontWeight:600,fontFamily:"DM Sans,sans-serif"}}>✓ {skuFile.name}</span>
-              <span style={{fontSize:11,color:"#5c6584",fontFamily:"DM Sans,sans-serif"}}>{skuFile.matched} matched · {skuFile.unmatched} unmatched · {skuFile.rows.length} total</span>
-              <button onClick={handleSkuDownload} style={{marginLeft:"auto",background:"#0f766e",border:"none",borderRadius:5,padding:"4px 12px",cursor:"pointer",fontSize:11,color:"#fff",fontFamily:"DM Sans,sans-serif",fontWeight:600}}>⬇ Download XLSX</button>
-              <button onClick={()=>setSkuFile(null)} style={{background:"none",border:"1px solid #d8d3c9",borderRadius:5,padding:"3px 10px",cursor:"pointer",fontSize:11,color:"#5c6584",fontFamily:"DM Sans,sans-serif"}}>Clear</button>
-            </div>
-          )}
+
+          {/* Upload bar — always visible */}
+          <div
+            onDragOver={e=>{e.preventDefault();setSkuDragOver(true);}}
+            onDragLeave={()=>setSkuDragOver(false)}
+            onDrop={e=>{e.preventDefault();setSkuDragOver(false);const f=e.dataTransfer.files[0];if(f)handleSkuUpload(f);}}
+            onClick={()=>document.getElementById("skuFileInput").click()}
+            style={{display:"flex",alignItems:"center",gap:12,padding:"10px 16px",marginBottom:16,border:"2px dashed "+(skuDragOver?"#0f766e":"#d8d3c9"),borderRadius:8,background:skuDragOver?"#f0fdf9":"#fafaf8",cursor:"pointer",transition:"all 0.2s"}}
+          >
+            <span style={{fontSize:18}}>📂</span>
+            {skuFile
+              ? <span style={{fontSize:12,color:"#0f766e",fontWeight:600,fontFamily:"DM Sans,sans-serif"}}>✓ {skuFile.name} &nbsp;<span style={{color:"#5c6584",fontWeight:400}}>{skuFile.matched} matched · {skuFile.unmatched} unmatched · {skuFile.rows.length} total — click or drop to replace</span></span>
+              : <span style={{fontSize:12,color:"#5c6584",fontFamily:"DM Sans,sans-serif"}}>Click or drop to upload &nbsp;·&nbsp; Expects: Store · City · State · Floral Mix to TTL (.xlsx)</span>
+            }
+            {skuFile&&(
+              <button onClick={handleSkuDownload} style={{marginLeft:"auto",background:"#0f766e",border:"none",borderRadius:5,padding:"4px 12px",cursor:"pointer",fontSize:11,color:"#fff",fontFamily:"DM Sans,sans-serif",fontWeight:600}} onClickCapture={e=>e.stopPropagation()}>⬇ Download XLSX</button>
+            )}
+            <input id="skuFileInput" type="file" accept=".xlsx" style={{display:"none"}} onChange={e=>{if(e.target.files[0]){handleSkuUpload(e.target.files[0]);e.target.value=null;}}}/>
+          </div>
+
           {skuFile&&(()=>{
             const matched=skuFile.rows.filter(r=>r.matched);
             const unmatched=skuFile.rows.filter(r=>!r.matched);
