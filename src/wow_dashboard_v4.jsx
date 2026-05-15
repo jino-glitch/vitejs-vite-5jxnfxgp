@@ -1027,7 +1027,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
   };
 
 
-  // ── SKU DRILLDOWN UPLOAD ─────────────────────────────────────────────────────
+  // ── ALLOCATIONS (IN & OUT) UPLOAD ─────────────────────────────────────────────────────
   const loadXLSX = () => new Promise((res, rej) => {
     if (window.XLSX) { res(window.XLSX); return; }
     const s = document.createElement("script");
@@ -1036,6 +1036,27 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
     s.onerror = () => rej(new Error("Failed to load XLSX"));
     document.head.appendChild(s);
   });
+
+  const handleSkuDownload = async () => {
+    if (!skuFile) return;
+    const XLSX = await loadXLSX();
+    const headers = ["DC","Region","District","Store","Store Description","% to Store"];
+    const matched = skuFile.rows.filter(r=>r.matched);
+    const unmatched = skuFile.rows.filter(r=>!r.matched);
+    const wsData = [
+      headers,
+      ...[...matched,...unmatched].map(r=>r.matched
+        ? [r.dc, r.region, r.district, Number(r.store), r.storeDesc, parseFloat((r.pct*100).toFixed(4))]
+        : ["—","—","—", Number(r.store), "Unmatched store", parseFloat((r.pct*100).toFixed(4))]
+      )
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    ws["!cols"] = [{wch:14},{wch:12},{wch:24},{wch:8},{wch:52},{wch:12}];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Allocations (In & Out)");
+    const outName = skuFile.name.replace(/\.xlsx$/i,"") + "_enriched.xlsx";
+    XLSX.writeFile(wb, outName);
+  };
 
   const handleSkuUpload = (file) => {
     const reader = new FileReader();
@@ -1349,7 +1370,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
         <button style={tabS(tab==="stores")} onClick={()=>setTab("stores")}>Store Analytics</button>
         <button style={tabS(tab==="district")} onClick={()=>setTab("district")}>Districts</button>
         <button style={{...tabS(tab==="alloc"),background:tab==="alloc"?"#7c3aed":"transparent",border:tab==="alloc"?"1px solid #7c3aed":"1px solid transparent"}} onClick={()=>setTab("alloc")}>Allocations</button>
-        <button style={{...tabS(tab==="sku"),background:tab==="sku"?"#0f766e":"transparent",border:tab==="sku"?"1px solid #0f766e":"1px solid transparent",color:tab==="sku"?"#fff":"#2d3752"}} onClick={()=>setTab("sku")}>SKU Drilldown</button>
+        <button style={{...tabS(tab==="sku"),background:tab==="sku"?"#0f766e":"transparent",border:tab==="sku"?"1px solid #0f766e":"1px solid transparent",color:tab==="sku"?"#fff":"#2d3752"}} onClick={()=>setTab("sku")}>Allocations (In & Out)</button>
       </div>
 
       <div style={{padding:isMobile?"12px 12px":"24px 28px"}}>
@@ -2583,12 +2604,12 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
       )}
       </div>
 
-      {/* SKU Drilldown Tab */}
+      {/* Allocations (In & Out) Tab */}
       {tab==="sku"&&(
         <div style={{padding:isMobile?"12px 12px":"24px 28px"}}>
           <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}>
             <div style={{width:4,height:24,background:"#0f766e",borderRadius:2}}/>
-            <span style={{fontSize:16,fontWeight:700,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif",letterSpacing:0.3}}>SKU DRILLDOWN</span>
+            <span style={{fontSize:16,fontWeight:700,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif",letterSpacing:0.3}}>ALLOCATIONS (IN & OUT)</span>
             <span style={{fontSize:11,color:"#5c6584",fontFamily:"DM Sans,sans-serif",marginLeft:4}}>Upload a store-level floral mix file to enrich with DC / District data</span>
           </div>
           {!skuFile&&(
@@ -2609,7 +2630,8 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
             <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16,padding:"10px 16px",background:"#f0fdf9",border:"1px solid #99f6e4",borderRadius:8}}>
               <span style={{fontSize:13,color:"#0f766e",fontWeight:600,fontFamily:"DM Sans,sans-serif"}}>✓ {skuFile.name}</span>
               <span style={{fontSize:11,color:"#5c6584",fontFamily:"DM Sans,sans-serif"}}>{skuFile.matched} matched · {skuFile.unmatched} unmatched · {skuFile.rows.length} total</span>
-              <button onClick={()=>setSkuFile(null)} style={{marginLeft:"auto",background:"none",border:"1px solid #d8d3c9",borderRadius:5,padding:"3px 10px",cursor:"pointer",fontSize:11,color:"#5c6584",fontFamily:"DM Sans,sans-serif"}}>Clear</button>
+              <button onClick={handleSkuDownload} style={{marginLeft:"auto",background:"#0f766e",border:"none",borderRadius:5,padding:"4px 12px",cursor:"pointer",fontSize:11,color:"#fff",fontFamily:"DM Sans,sans-serif",fontWeight:600}}>⬇ Download XLSX</button>
+              <button onClick={()=>setSkuFile(null)} style={{background:"none",border:"1px solid #d8d3c9",borderRadius:5,padding:"3px 10px",cursor:"pointer",fontSize:11,color:"#5c6584",fontFamily:"DM Sans,sans-serif"}}>Clear</button>
             </div>
           )}
           {skuFile&&(()=>{
