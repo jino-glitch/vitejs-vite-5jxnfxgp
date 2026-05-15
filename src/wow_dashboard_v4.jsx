@@ -2370,7 +2370,8 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
             <div style={{fontSize:13,color:"#7c3aed",letterSpacing:0.5,textTransform:"uppercase",marginBottom:12,fontFamily:"DM Sans,sans-serif"}}>
               {allocSearch.trim() ? "Cases Received by Category · Store #"+allocSearch.trim()+" · Fiscal Week" : "Cases Received by Category · Fiscal Week"}
             </div>
-            <div style={{overflowX:"auto",border:"1px solid #d8d3c9",borderRadius:10}}>
+            <div style={{background:"#ffffff",border:"1px solid #d8d3c9",borderRadius:10,overflow:"hidden"}}>
+              <div style={{overflowX:"auto"}}>
                 <table style={{width:"100%",borderCollapse:"separate",borderSpacing:0,minWidth:700}}>
                   <thead>
                     <tr style={{background:"#ede9e3"}}>
@@ -2419,7 +2420,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
 
                         rows.push(
                           <tr key={cat} style={{background:ci%2===0?"#ffffff":"#f5f4f0"}}>
-                            <td style={{padding:"9px 14px",fontSize:14,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif",borderBottom:"1px solid #d8d3c9",whiteSpace:"nowrap",position:"sticky",left:0,background:ci%2===0?"#ffffff":"#f5f4f0",zIndex:1}}>{catLabels[cat]}</td>
+                            <td style={{padding:"9px 14px",fontSize:14,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif",borderBottom:"1px solid #d8d3c9",whiteSpace:"nowrap",position:"sticky",left:0,background:"inherit",zIndex:1}}>{catLabels[cat]}</td>
                             {rowVals.map((v,i)=>{
                               const intensity = v>0 ? Math.max(0.15, v/maxVal) : 0;
                               return (
@@ -2448,6 +2449,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                     })()}
                   </tbody>
                 </table>
+              </div>
             </div>
           </div>
 
