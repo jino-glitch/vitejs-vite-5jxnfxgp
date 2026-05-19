@@ -1131,17 +1131,41 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
       return ws;
     };
 
-    // DC tabs
-    const dcHeaders = ["SKU","Store","Qty","DC","Ship Date"];
+    // DC tabs — SKU · Store · Qty · DC · Ship Date · PO Inbound Date
+    const dcHeaders = ["SKU","Store","Qty","DC","Ship Date","PO Inbound Date"];
     const toDCRow = (r, shipDate) => {
       const dc = normDC(r.dc);
       const formattedSKU = skuNumber ? "DC"+skuNumber : "";
       const qtyVal = resolveDisplayQty(r);
-      return [formattedSKU, Number(r.store), qtyVal===0?"":qtyVal, dc, shipDate];
+      return [formattedSKU, Number(r.store), qtyVal===0?"":qtyVal, dc, shipDate, ""];
     };
     const makeDCSheet = (rows, shipDate) => {
-      const ws = XLSX.utils.aoa_to_sheet([dcHeaders, ...rows.map(r=>toDCRow(r, shipDate))]);
-      ws["!cols"] = [{wch:14},{wch:8},{wch:8},{wch:14},{wch:14}];
+      const nRows = rows.length;
+      const data = [dcHeaders, ...rows.map(r=>toDCRow(r, shipDate))];
+      const ws = XLSX.utils.aoa_to_sheet(data);
+      // PO Inbound Date formula: Ship Date col E + 1 (col F = index 5, rows 2..nRows+1)
+      for (let ri = 1; ri <= nRows; ri++) {
+        const cellRef = XLSX.utils.encode_cell({r:ri, c:5});
+        const shipRef = XLSX.utils.encode_cell({r:ri, c:4});
+        ws[cellRef] = {t:'n', f: shipRef+'+1'};
+      }
+      // Center all cells
+      const range = XLSX.utils.decode_range(ws['!ref']);
+      for (let R = range.s.r; R <= range.e.r; R++) {
+        for (let C = range.s.c; C <= range.e.c; C++) {
+          const ref = XLSX.utils.encode_cell({r:R,c:C});
+          if (!ws[ref]) ws[ref] = {t:'z'};
+          ws[ref].s = ws[ref].s || {};
+          ws[ref].s.alignment = {horizontal:'center',vertical:'center'};
+          if (R === 0) {
+            ws[ref].s.font = {bold:true, color:{rgb:'FFFFFF'}};
+            ws[ref].s.fill = {fgColor:{rgb:'1A5C38'}, patternType:'solid'};
+          }
+        }
+      }
+      ws["!cols"] = [{wch:14},{wch:8},{wch:8},{wch:14},{wch:14},{wch:16}];
+      // Green table style
+      ws["!autofilter"] = {ref: ws["!ref"]};
       return ws;
     };
 
@@ -1156,10 +1180,12 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
 
     // Build per-DC summary rows
     const summaryTabRows = [];
-    summaryTabRows.push([titleStr,"","","","",""]);
-    summaryTabRows.push(["","","","","",""]);
-    summaryTabRows.push(["DC","Ship Date","Item #","Total Cases","Stores","Case Cost"]);
+    summaryTabRows.push([titleStr,"","","","","",""]);
+    summaryTabRows.push(["","","","","","",""]);
+    summaryTabRows.push(["DC","Ship Date","PO Inbound Date","Item #","Total Cases","Stores","Case Cost"]);
     let grandCases = 0; let grandStores = 0;
+    let summDataRowStart = 3; // 0-indexed row of first data row
+    let summDataRowCount = 0;
     DC_ORDER.forEach(dc => {
       const normName = normDC(dc);
       if (!allocSelectedDCs.includes(normName) && !allocSelectedDCs.includes(dc)) return;
@@ -1168,14 +1194,55 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
       const dcCases = dcRows.reduce((s,r)=>s+resolveDisplayQty(r),0);
       const dcStores = dcRows.filter(r=>resolveDisplayQty(r)>0).length;
       grandCases += dcCases; grandStores += dcStores;
-      summaryTabRows.push([normName, shipDateStr, skuLabel, dcCases, dcStores, skuCost?parseFloat(skuCost):""]);
+      summaryTabRows.push([normName, shipDateStr, "", skuLabel, dcCases, dcStores, skuCost?parseFloat(skuCost):""]);
+      summDataRowCount++;
     });
-    summaryTabRows.push(["","","","","",""]);
-    summaryTabRows.push(["TOTAL","","",grandCases,grandStores,""]);
+    summaryTabRows.push(["","","","","","",""]);
+    summaryTabRows.push(["TOTAL","","","",grandCases,grandStores,""]);
 
     const summWs = XLSX.utils.aoa_to_sheet(summaryTabRows);
-    summWs["!cols"] = [{wch:14},{wch:12},{wch:12},{wch:14},{wch:10},{wch:12}];
-    summWs["!merges"] = [{s:{r:0,c:0},e:{r:0,c:5}}];
+
+    // PO Inbound Date formula for each DC data row in Summary (col C = index 2, ship date = col B = index 1)
+    for (let ri = summDataRowStart; ri < summDataRowStart + summDataRowCount; ri++) {
+      const poCell = XLSX.utils.encode_cell({r:ri, c:2});
+      const sdCell = XLSX.utils.encode_cell({r:ri, c:1});
+      summWs[poCell] = {t:'n', f: sdCell+'+1'};
+    }
+
+    // Style Summary tab
+    const summRange = XLSX.utils.decode_range(summWs['!ref']);
+    for (let R = summRange.s.r; R <= summRange.e.r; R++) {
+      for (let C = summRange.s.c; C <= summRange.e.c; C++) {
+        const ref = XLSX.utils.encode_cell({r:R,c:C});
+        if (!summWs[ref]) summWs[ref] = {t:'z'};
+        summWs[ref].s = summWs[ref].s || {};
+        // Center all except A1 title
+        if (!(R===0 && C===0)) summWs[ref].s.alignment = {horizontal:'center',vertical:'center'};
+        // Blue header row (row 2 = index 2)
+        if (R === 2) {
+          summWs[ref].s.font = {bold:true, color:{rgb:'FFFFFF'}};
+          summWs[ref].s.fill = {fgColor:{rgb:'2E4FA3'}, patternType:'solid'};
+          summWs[ref].s.border = {
+            top:{style:'thin',color:{rgb:'000000'}},
+            bottom:{style:'thin',color:{rgb:'000000'}},
+            left:{style:'thin',color:{rgb:'000000'}},
+            right:{style:'thin',color:{rgb:'000000'}}
+          };
+        }
+        // Border on data rows
+        if (R >= 2 && R < summRange.e.r) {
+          summWs[ref].s.border = summWs[ref].s.border || {
+            top:{style:'thin',color:{rgb:'D0D0D0'}},
+            bottom:{style:'thin',color:{rgb:'D0D0D0'}},
+            left:{style:'thin',color:{rgb:'D0D0D0'}},
+            right:{style:'thin',color:{rgb:'D0D0D0'}}
+          };
+        }
+      }
+    }
+
+    summWs["!cols"] = [{wch:14},{wch:12},{wch:16},{wch:12},{wch:14},{wch:10},{wch:12}];
+    summWs["!merges"] = [{s:{r:0,c:0},e:{r:0,c:6}}];
     XLSX.utils.book_append_sheet(wb, summWs, "Summary");
 
     // ── Per-DC tabs ──
