@@ -2617,7 +2617,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
               <div style={{fontSize:13,color:"#f5a623",letterSpacing:0.5,textTransform:"uppercase",marginBottom:4,fontFamily:"DM Sans,sans-serif",display:"flex",alignItems:"center",gap:8}}>
                 <span>⚠</span>
                 <span>Corrections Log — Outbound Data Overrides</span>
-                <span style={{fontSize:12,color:"#3a5a7a",marginLeft:4}}>Source: DC Template Orders Del Wk 12 / 13 / 14 / 15</span>
+                <span style={{fontSize:12,color:"#3a5a7a",marginLeft:4}}>Source: DC Template Orders Del {[...new Set(CORRECTIONS_LOG.map(c=>String(c.fw).slice(-2)))].sort().map(w=>"Wk "+parseInt(w)).join(" / ")}</span>
               </div>
               <div style={{fontSize:12,color:"#3a5a7a",fontFamily:"DM Sans,sans-serif",marginBottom:12}}>
                 The following store outbound quantities were corrected based on the DC Template file. Original FY2026 export values differed from actual cases shipped. (FW15: 0 corrections — template matched export exactly.)
