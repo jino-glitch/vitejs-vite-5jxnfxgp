@@ -1113,7 +1113,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
       return (qty==="—"||qty===""||qty===undefined) ? 0 : Number(qty);
     };
 
-    const allRows = [...matched, ...unmatched];
+    const allRows = [...matched, ...unmatched]; // matched already filtered by selected DCs
 
     // Summary tab
     const summaryHeaders = ["DC","Region","District","Store","Store Description","% to Store","Rank","Qty"];
@@ -1136,7 +1136,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
       const dc = normDC(r.dc);
       const formattedSKU = skuNumber ? "DC"+skuNumber : "";
       const qtyVal = resolveDisplayQty(r);
-      return [formattedSKU, Number(r.store), qtyVal, dc, shipDate];
+      return [formattedSKU, Number(r.store), qtyVal===0?"":qtyVal, dc, shipDate];
     };
     const makeDCSheet = (rows, shipDate) => {
       const ws = XLSX.utils.aoa_to_sheet([dcHeaders, ...rows.map(r=>toDCRow(r, shipDate))]);
@@ -1145,7 +1145,6 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
     };
 
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, makeSummarySheet(allRows), "Summary");
 
     // Per-DC tabs — only selected DCs
     const DC_ORDER = ["DALLASTXDC","DENVERCODC","FOURSEASON","FULRTNCADC","ORLNDOFLDC","PHOENXAZDC","UNCITYCADC"];
@@ -1160,6 +1159,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
     if (unmatched.length>0) {
       XLSX.utils.book_append_sheet(wb, makeSummarySheet(unmatched), "Unmatched");
     }
+    XLSX.utils.book_append_sheet(wb, makeSummarySheet(allRows), "Appendix");
 
     const outName = skuFile.name.replace(/.xlsx$/i,"") + "_enriched.xlsx";
     XLSX.writeFile(wb, outName);
@@ -2778,7 +2778,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
           {skuFile&&(()=>{
             const matched=skuFile.rows.filter(r=>r.matched);
             const unmatched=skuFile.rows.filter(r=>!r.matched);
-            const allRows=[...matched,...unmatched];
+            const allRows=[...matched.filter(r=>allocSelectedDCs.includes(r.dc==="UNCITYCADC"?"TRACYCADC":r.dc)||allocSelectedDCs.includes(r.dc)),...unmatched];
 
             // Case summary
             const gradeMeta = {A:{color:"#4ade80"},B:{color:"#86efac"},C:{color:"#f5a623"},D:{color:"#fb923c"},F:{color:"#f87171"}};
@@ -2823,7 +2823,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                       style={{width:120,padding:"5px 10px",border:"1px solid #d8d3c9",borderRadius:6,fontSize:12,fontFamily:"DM Sans,sans-serif",background:"#fff",color:"#0a0f1e"}}/>
                   </div>
                   <div style={{display:"flex",alignItems:"center",gap:8}}>
-                    <span style={{fontSize:12,fontWeight:700,color:"#2d3752",fontFamily:"DM Sans,sans-serif"}}>Cost</span>
+                    <span style={{fontSize:12,fontWeight:700,color:"#2d3752",fontFamily:"DM Sans,sans-serif"}}>Case Cost</span>
                     <span style={{fontSize:12,color:"#5c6584",fontFamily:"DM Sans,sans-serif"}}>$</span>
                     <input type="number" placeholder="0.00" value={skuCost} onChange={e=>setSkuCost(e.target.value)}
                       style={{width:90,padding:"5px 10px",border:"1px solid #d8d3c9",borderRadius:6,fontSize:12,fontFamily:"DM Sans,sans-serif",background:"#fff",color:"#0a0f1e"}}/>
