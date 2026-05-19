@@ -1146,15 +1146,44 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
 
     const wb = XLSX.utils.book_new();
 
-    // Per-DC tabs — only selected DCs
+    // ── Summary tab (first) ──
     const DC_ORDER = ["DALLASTXDC","DENVERCODC","FOURSEASON","FULRTNCADC","ORLNDOFLDC","PHOENXAZDC","UNCITYCADC"];
+    const now = new Date().toLocaleString("en-US",{month:"numeric",day:"numeric",year:"numeric",hour:"numeric",minute:"2-digit"});
+    const skuLabel = skuNumber ? "DC"+skuNumber : "—";
+    const titleStr = "Allocation Summary — "+skuLabel+" — Generated: "+now;
+    const shipDateStr = globalShipDate ? globalShipDate.replace(/-/g,"") : "";
+
+    // Build per-DC summary rows
+    const summaryTabRows = [];
+    summaryTabRows.push([titleStr,"","","","",""]);
+    summaryTabRows.push(["","","","","",""]);
+    summaryTabRows.push(["DC","Ship Date","Item #","Total Cases","Stores","Case Cost"]);
+    let grandCases = 0; let grandStores = 0;
     DC_ORDER.forEach(dc => {
       const normName = normDC(dc);
       if (!allocSelectedDCs.includes(normName) && !allocSelectedDCs.includes(dc)) return;
       const dcRows = matched.filter(r=>r.dc===dc);
       if (dcRows.length===0) return;
-      const shipDate = globalShipDate ? globalShipDate.replace(/-/g,"") : "";
-      XLSX.utils.book_append_sheet(wb, makeDCSheet(dcRows, shipDate), normName);
+      const dcCases = dcRows.reduce((s,r)=>s+resolveDisplayQty(r),0);
+      const dcStores = dcRows.filter(r=>resolveDisplayQty(r)>0).length;
+      grandCases += dcCases; grandStores += dcStores;
+      summaryTabRows.push([normName, shipDateStr, skuLabel, dcCases, dcStores, skuCost?parseFloat(skuCost):""]);
+    });
+    summaryTabRows.push(["","","","","",""]);
+    summaryTabRows.push(["TOTAL","","",grandCases,grandStores,""]);
+
+    const summWs = XLSX.utils.aoa_to_sheet(summaryTabRows);
+    summWs["!cols"] = [{wch:14},{wch:12},{wch:12},{wch:14},{wch:10},{wch:12}];
+    summWs["!merges"] = [{s:{r:0,c:0},e:{r:0,c:5}}];
+    XLSX.utils.book_append_sheet(wb, summWs, "Summary");
+
+    // ── Per-DC tabs ──
+    DC_ORDER.forEach(dc => {
+      const normName = normDC(dc);
+      if (!allocSelectedDCs.includes(normName) && !allocSelectedDCs.includes(dc)) return;
+      const dcRows = matched.filter(r=>r.dc===dc);
+      if (dcRows.length===0) return;
+      XLSX.utils.book_append_sheet(wb, makeDCSheet(dcRows, shipDateStr), normName);
     });
     if (unmatched.length>0) {
       XLSX.utils.book_append_sheet(wb, makeSummarySheet(unmatched), "Unmatched");
