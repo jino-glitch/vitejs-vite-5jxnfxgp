@@ -1087,7 +1087,9 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
     const toDCRow = (r, shipDate) => {
       const {qty} = resolveRank(r.pct);
       const dc = normDC(r.dc);
-      return [skuNumber||"", Number(r.store), qty, dc, shipDate||""];
+      const formattedSKU = skuNumber ? "DC"+skuNumber : "";
+      const formattedDate = shipDate ? shipDate.replace(/-/g,"") : "";
+      return [formattedSKU, Number(r.store), qty, dc, formattedDate];
     };
     const makeDCSheet = (rows, shipDate) => {
       const ws = XLSX.utils.aoa_to_sheet([dcHeaders, ...rows.map(r=>toDCRow(r, shipDate))]);
