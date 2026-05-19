@@ -234,6 +234,11 @@ export default function App() {
   const [tab, setTab] = useState("wow");
   const [skuFile, setSkuFile] = useState(null);
   const [skuDragOver, setSkuDragOver] = useState(false);
+  const [skuNumber, setSkuNumber] = useState("");
+  const DC_LIST = ["DALLASTXDC","DENVERCODC","FOURSEASON","FULRTNCADC","ORLNDOFLDC","PHOENXAZDC","TRACYCADC"];
+  const [dcShipDates, setDcShipDates] = useState({"DALLASTXDC":"","DENVERCODC":"","FOURSEASON":"","FULRTNCADC":"","ORLNDOFLDC":"","PHOENXAZDC":"","TRACYCADC":""});
+  const [skuNumber, setSkuNumber] = useState("");
+  const [dcShipDates, setDcShipDates] = useState({});
   const [rankRules, setRankRules] = useState([
     {grade:"A", min:"0.41", max:"0.70", qty:"1"},
     {grade:"B", min:"0.31", max:"0.40", qty:"1"},
@@ -1059,41 +1064,55 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
   const handleSkuDownload = async () => {
     if (!skuFile) return;
     const XLSX = await loadXLSX();
-    const headers = ["DC","Region","District","Store","Store Description","% to Store","Rank","Qty"];
     const matched = skuFile.rows.filter(r=>r.matched);
     const unmatched = skuFile.rows.filter(r=>!r.matched);
     const allRows = [...matched,...unmatched];
 
-    const toRow = (r) => {
+    const normDC = (dc) => dc==="UNCITYCADC"?"TRACYCADC":dc;
+
+    // Summary tab headers — original structure
+    const summaryHeaders = ["DC","Region","District","Store","Store Description","% to Store","Rank","Qty"];
+    const toSummaryRow = (r) => {
       const {grade,qty} = resolveRank(r.pct);
-      const dc = r.matched ? (r.dc==="UNCITYCADC"?"TRACYCADC":r.dc) : "—";
       return r.matched
-        ? [dc, r.region, r.district, Number(r.store), r.storeDesc, parseFloat((r.pct*100).toFixed(4)), grade, qty]
+        ? [normDC(r.dc), r.region, r.district, Number(r.store), r.storeDesc, parseFloat((r.pct*100).toFixed(4)), grade, qty]
         : ["—","—","—", Number(r.store), "Unmatched store", parseFloat((r.pct*100).toFixed(4)), "—", "—"];
     };
-
-    const makeSheet = (rows) => {
-      const ws = XLSX.utils.aoa_to_sheet([headers, ...rows.map(toRow)]);
+    const makeSummarySheet = (rows) => {
+      const ws = XLSX.utils.aoa_to_sheet([summaryHeaders, ...rows.map(toSummaryRow)]);
       ws["!cols"] = [{wch:14},{wch:12},{wch:24},{wch:8},{wch:52},{wch:12},{wch:8},{wch:8}];
+      return ws;
+    };
+
+    // DC tabs — new structure: DC · SKU · Store · Qty · DC · Ship Date
+    const dcHeaders = ["DC","SKU","Store","Qty","DC","Ship Date"];
+    const toDCRow = (r, shipDate) => {
+      const {qty} = resolveRank(r.pct);
+      const dc = normDC(r.dc);
+      return [dc, skuNumber||"", Number(r.store), qty, dc, shipDate||""];
+    };
+    const makeDCSheet = (rows, shipDate) => {
+      const ws = XLSX.utils.aoa_to_sheet([dcHeaders, ...rows.map(r=>toDCRow(r, shipDate))]);
+      ws["!cols"] = [{wch:14},{wch:14},{wch:8},{wch:8},{wch:14},{wch:14}];
       return ws;
     };
 
     const wb = XLSX.utils.book_new();
 
-    // Tab 1: all rows
-    XLSX.utils.book_append_sheet(wb, makeSheet(allRows), "Allocations (In&Out)");
+    // Tab 1: Summary
+    XLSX.utils.book_append_sheet(wb, makeSummarySheet(allRows), "Summary");
 
-    // Per-DC tabs — UNCITYCADC renamed to TRACYCADC
+    // Per-DC tabs
     const DC_ORDER = ["DALLASTXDC","DENVERCODC","FOURSEASON","FULRTNCADC","ORLNDOFLDC","PHOENXAZDC","UNCITYCADC"];
     DC_ORDER.forEach(dc => {
       const dcRows = matched.filter(r=>r.dc===dc);
       if (dcRows.length===0) return;
-      const tabName = dc==="UNCITYCADC"?"TRACYCADC":dc;
-      XLSX.utils.book_append_sheet(wb, makeSheet(dcRows), tabName);
+      const tabName = normDC(dc);
+      const shipDate = dcShipDates[dc]||"";
+      XLSX.utils.book_append_sheet(wb, makeDCSheet(dcRows, shipDate), tabName);
     });
-    // Unmatched on last tab if any
     if (unmatched.length>0) {
-      XLSX.utils.book_append_sheet(wb, makeSheet(unmatched), "Unmatched");
+      XLSX.utils.book_append_sheet(wb, makeSummarySheet(unmatched), "Unmatched");
     }
 
     const outName = skuFile.name.replace(/\.xlsx$/i,"") + "_enriched.xlsx";
@@ -2649,10 +2668,20 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
       {/* Allocations (In&Out) Tab */}
       {tab==="sku"&&(
         <div style={{padding:isMobile?"12px 12px":"24px 28px"}}>
-          <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}>
+          <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20,flexWrap:"wrap"}}>
             <div style={{width:4,height:24,background:"#0f766e",borderRadius:2}}/>
             <span style={{fontSize:16,fontWeight:700,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif",letterSpacing:0.3}}>ALLOCATIONS (IN&OUT)</span>
             <span style={{fontSize:11,color:"#5c6584",fontFamily:"DM Sans,sans-serif",marginLeft:4}}>Upload a store-level floral mix file to enrich with DC / District data</span>
+            <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:8}}>
+              <span style={{fontSize:11,fontWeight:700,color:"#2d3752",fontFamily:"DM Sans,sans-serif"}}>SKU</span>
+              <input
+                type="text"
+                placeholder="SKU number"
+                value={skuNumber}
+                onChange={e=>setSkuNumber(e.target.value)}
+                style={{padding:"5px 10px",border:"1px solid #d8d3c9",borderRadius:6,fontSize:12,fontFamily:"DM Sans,sans-serif",width:140,background:"#fff",color:"#0a0f1e"}}
+              />
+            </div>
           </div>
 
           {/* Rank Rules Config */}
@@ -2749,6 +2778,58 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                     );
                   })}
                 </div>
+
+                {/* DC Ship Dates */}
+                {(()=>{
+                  const DC_ORDER = ["DALLASTXDC","DENVERCODC","FOURSEASON","FULRTNCADC","ORLNDOFLDC","PHOENXAZDC","UNCITYCADC"];
+                  const activeDCs = DC_ORDER.filter(dc=>matched.some(r=>r.dc===dc));
+                  if (activeDCs.length===0) return null;
+                  return(
+                    <div style={{marginBottom:16,background:"#f5f4f0",border:"1px solid #e0dbd4",borderRadius:8,padding:"14px 16px"}}>
+                      <div style={{fontSize:11,fontWeight:700,color:"#2d3752",fontFamily:"DM Sans,sans-serif",letterSpacing:0.4,marginBottom:10}}>SHIP DATES &nbsp;<span style={{fontWeight:400,color:"#5c6584"}}>Set ship date per DC</span></div>
+                      <div style={{display:"flex",flexWrap:"wrap",gap:12}}>
+                        {activeDCs.map(dc=>{
+                          const label = dc==="UNCITYCADC"?"TRACYCADC":dc;
+                          return(
+                            <div key={dc} style={{display:"flex",alignItems:"center",gap:8}}>
+                              <span style={{fontSize:11,fontWeight:600,color:"#2d3752",fontFamily:"DM Sans,sans-serif",minWidth:100}}>{label}</span>
+                              <input
+                                type="date"
+                                value={dcShipDates[dc]||""}
+                                onChange={e=>{setDcShipDates(prev=>({...prev,[dc]:e.target.value}));}}
+                                style={{padding:"4px 8px",border:"1px solid #d8d3c9",borderRadius:5,fontSize:11,fontFamily:"DM Sans,sans-serif",background:"#fff",color:"#0a0f1e"}}
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Per-DC Ship Date Section */}
+                {skuFile&&(()=>{
+                  const presentDCs = DC_LIST.filter(dc=>skuFile.rows.some(r=>r.matched&&(r.dc===dc||(dc==="TRACYCADC"&&r.dc==="UNCITYCADC"))));
+                  if(presentDCs.length===0) return null;
+                  return(
+                    <div style={{marginBottom:16,background:"#f5f4f0",border:"1px solid #e0dbd4",borderRadius:8,padding:"14px 16px"}}>
+                      <div style={{fontSize:11,fontWeight:700,color:"#2d3752",fontFamily:"DM Sans,sans-serif",letterSpacing:0.4,marginBottom:10}}>SHIP DATES &nbsp;<span style={{fontWeight:400,color:"#5c6584"}}>Set a ship date per DC for the export</span></div>
+                      <div style={{display:"flex",flexWrap:"wrap",gap:12}}>
+                        {presentDCs.map(dc=>(
+                          <div key={dc} style={{display:"flex",alignItems:"center",gap:8}}>
+                            <span style={{fontSize:11,fontWeight:700,color:"#2d3752",fontFamily:"DM Sans,sans-serif",whiteSpace:"nowrap"}}>{dc}</span>
+                            <input
+                              type="date"
+                              value={dcShipDates[dc]||""}
+                              onChange={e=>{setDcShipDates(p=>({...p,[dc]:e.target.value}));}}
+                              style={{padding:"4px 8px",border:"1px solid #d8d3c9",borderRadius:5,fontSize:11,fontFamily:"DM Sans,sans-serif",background:"#fff",color:"#0a0f1e"}}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 <div style={{overflowX:"auto"}}>
                 <table style={{width:"100%",borderCollapse:"collapse",fontSize:11,fontFamily:"DM Sans,sans-serif"}}>
