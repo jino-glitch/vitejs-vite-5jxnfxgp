@@ -1048,7 +1048,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
   const loadXLSX = () => new Promise((res, rej) => {
     if (window.XLSX) { res(window.XLSX); return; }
     const s = document.createElement("script");
-    s.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
+    s.src = "https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js";
     s.onload = () => res(window.XLSX);
     s.onerror = () => rej(new Error("Failed to load XLSX"));
     document.head.appendChild(s);
@@ -1385,7 +1385,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
       if(existing){ existing.addEventListener('load', ()=>runExport(window.XLSX)); return; }
       const script = document.createElement('script');
       script.id = 'sheetjs-script';
-      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+      script.src = 'https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js';
       script.onload = () => runExport(window.XLSX);
       script.onerror = () => alert('Failed to load Excel library. Check your connection.');
       document.head.appendChild(script);
