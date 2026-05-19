@@ -1082,16 +1082,16 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
       return ws;
     };
 
-    // DC tabs — new structure: DC · SKU · Store · Qty · DC · Ship Date
-    const dcHeaders = ["DC","SKU","Store","Qty","DC","Ship Date"];
+    // DC tabs — structure: SKU · Store · Qty · DC · Ship Date
+    const dcHeaders = ["SKU","Store","Qty","DC","Ship Date"];
     const toDCRow = (r, shipDate) => {
       const {qty} = resolveRank(r.pct);
       const dc = normDC(r.dc);
-      return [dc, skuNumber||"", Number(r.store), qty, dc, shipDate||""];
+      return [skuNumber||"", Number(r.store), qty, dc, shipDate||""];
     };
     const makeDCSheet = (rows, shipDate) => {
       const ws = XLSX.utils.aoa_to_sheet([dcHeaders, ...rows.map(r=>toDCRow(r, shipDate))]);
-      ws["!cols"] = [{wch:14},{wch:14},{wch:8},{wch:8},{wch:14},{wch:14}];
+      ws["!cols"] = [{wch:14},{wch:8},{wch:8},{wch:14},{wch:14}];
       return ws;
     };
 
@@ -2800,30 +2800,6 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                             </div>
                           );
                         })}
-                      </div>
-                    </div>
-                  );
-                })()}
-
-                {/* Per-DC Ship Date Section */}
-                {skuFile&&(()=>{
-                  const presentDCs = DC_LIST.filter(dc=>skuFile.rows.some(r=>r.matched&&(r.dc===dc||(dc==="TRACYCADC"&&r.dc==="UNCITYCADC"))));
-                  if(presentDCs.length===0) return null;
-                  return(
-                    <div style={{marginBottom:16,background:"#f5f4f0",border:"1px solid #e0dbd4",borderRadius:8,padding:"14px 16px"}}>
-                      <div style={{fontSize:11,fontWeight:700,color:"#2d3752",fontFamily:"DM Sans,sans-serif",letterSpacing:0.4,marginBottom:10}}>SHIP DATES &nbsp;<span style={{fontWeight:400,color:"#5c6584"}}>Set a ship date per DC for the export</span></div>
-                      <div style={{display:"flex",flexWrap:"wrap",gap:12}}>
-                        {presentDCs.map(dc=>(
-                          <div key={dc} style={{display:"flex",alignItems:"center",gap:8}}>
-                            <span style={{fontSize:11,fontWeight:700,color:"#2d3752",fontFamily:"DM Sans,sans-serif",whiteSpace:"nowrap"}}>{dc}</span>
-                            <input
-                              type="date"
-                              value={dcShipDates[dc]||""}
-                              onChange={e=>{setDcShipDates(p=>({...p,[dc]:e.target.value}));}}
-                              style={{padding:"4px 8px",border:"1px solid #d8d3c9",borderRadius:5,fontSize:11,fontFamily:"DM Sans,sans-serif",background:"#fff",color:"#0a0f1e"}}
-                            />
-                          </div>
-                        ))}
                       </div>
                     </div>
                   );
