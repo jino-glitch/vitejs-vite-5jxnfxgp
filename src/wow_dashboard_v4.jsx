@@ -2873,54 +2873,6 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
 
             return(
               <div>
-                {/* Case Summary Bar */}
-                <div style={{display:"flex",flexDirection:"column",gap:8,padding:"12px 16px",marginBottom:12,background:"#f5f4f0",border:"1px solid #e0dbd4",borderRadius:8}}>
-                  {/* Total row */}
-                  <div style={{display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
-                    <div style={{display:"flex",alignItems:"baseline",gap:6,marginRight:8}}>
-                      <span style={{fontSize:13,fontWeight:700,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif"}}>Total Cases:</span>
-                      <span style={{fontSize:18,fontWeight:700,color:useDistribSummary?"#7c3aed":"#0f766e",fontFamily:"DM Sans,sans-serif"}}>{dcSummaryData.totalCases}</span>
-                      <span style={{fontSize:11,color:"#5c6584",fontFamily:"DM Sans,sans-serif"}}>cases</span>
-                    </div>
-                    {!useDistribSummary&&(<>
-                      <div style={{width:1,height:28,background:"#d8d3c9"}}/>
-                      {gradeOrder.map(g=>{
-                        const cnt = dcSummaryData.caseSummary[g]||0;
-                        const col = gradeMeta[g]?.color||"#c8934a";
-                        return(
-                          <div key={g} style={{display:"flex",alignItems:"center",gap:5}}>
-                            <span style={{width:18,height:18,borderRadius:3,background:col,display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:"#fff",flexShrink:0}}>{g}</span>
-                            <span style={{fontSize:12,fontWeight:600,color:"#2d3752",fontFamily:"DM Sans,sans-serif"}}>{cnt}</span>
-                            <span style={{fontSize:10,color:"#5c6584",fontFamily:"DM Sans,sans-serif"}}>cases</span>
-                          </div>
-                        );
-                      })}
-                    </>)}
-                  </div>
-                  {/* Per-DC breakdown rows when Total Qty active */}
-                  {useDistribSummary&&dcSummaryData.dcOrder.map(dc=>{
-                    const {total,grades} = dcSummaryData.dcBreakdown[dc]||{total:0,grades:{}};
-                    return(
-                      <div key={dc} style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap",paddingTop:6,borderTop:"1px solid #e0dbd4"}}>
-                        <span style={{fontSize:11,fontWeight:700,color:"#2d3752",fontFamily:"DM Sans,sans-serif",minWidth:100}}>{dc.replace("DC","")}</span>
-                        <span style={{fontSize:13,fontWeight:700,color:"#7c3aed",fontFamily:"DM Sans,sans-serif"}}>{total.toLocaleString()}</span>
-                        <span style={{fontSize:10,color:"#5c6584",fontFamily:"DM Sans,sans-serif",marginRight:6}}>cases</span>
-                        <div style={{width:1,height:18,background:"#d8d3c9"}}/>
-                        {gradeOrder.map(g=>{
-                          const cnt = grades[g]||0;
-                          const col = gradeMeta[g]?.color||"#c8934a";
-                          return(
-                            <div key={g} style={{display:"flex",alignItems:"center",gap:4}}>
-                              <span style={{width:16,height:16,borderRadius:3,background:col,display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:8,fontWeight:700,color:"#fff",flexShrink:0}}>{g}</span>
-                              <span style={{fontSize:11,fontWeight:600,color:"#2d3752",fontFamily:"DM Sans,sans-serif"}}>{cnt}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    );
-                  })}
-                </div>
-
                 {/* SKU + Cost + Ship Date + Total Qty */}
                 <div style={{display:"flex",alignItems:"center",gap:20,padding:"12px 16px",marginBottom:8,background:"#f5f4f0",border:"1px solid #e0dbd4",borderRadius:8,flexWrap:"wrap"}}>
                   <div style={{display:"flex",alignItems:"center",gap:8}}>
@@ -2962,6 +2914,54 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                   <button onClick={()=>setAllocSelectedDCs([...DC_LIST])} style={{padding:"3px 8px",background:"#e0dbd4",border:"none",color:"#5c6584",borderRadius:5,cursor:"pointer",fontSize:10,fontFamily:"DM Sans,sans-serif"}}>All</button>
                   <button onClick={()=>setAllocSelectedDCs([])} style={{padding:"3px 8px",background:"#e0dbd4",border:"none",color:"#5c6584",borderRadius:5,cursor:"pointer",fontSize:10,fontFamily:"DM Sans,sans-serif"}}>None</button>
                   <span style={{marginLeft:"auto",fontSize:10,color:"#5c6584",fontFamily:"DM Sans,sans-serif"}}>{allocSelectedDCs.length}/{DC_LIST.length} DCs selected</span>
+                </div>
+
+                {/* Case Summary Bar */}
+                <div style={{display:"flex",flexDirection:"column",gap:8,padding:"12px 16px",marginBottom:12,background:"#f5f4f0",border:"1px solid #e0dbd4",borderRadius:8}}>
+                  {/* Total row */}
+                  <div style={{display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
+                    <div style={{display:"flex",alignItems:"baseline",gap:6,marginRight:8}}>
+                      <span style={{fontSize:13,fontWeight:700,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif"}}>Total Cases:</span>
+                      <span style={{fontSize:18,fontWeight:700,color:useDistribSummary?"#7c3aed":"#0f766e",fontFamily:"DM Sans,sans-serif"}}>{dcSummaryData.totalCases}</span>
+                      <span style={{fontSize:11,color:"#5c6584",fontFamily:"DM Sans,sans-serif"}}>cases</span>
+                    </div>
+                    {!useDistribSummary&&(<>
+                      <div style={{width:1,height:28,background:"#d8d3c9"}}/>
+                      {gradeOrder.map(g=>{
+                        const cnt = dcSummaryData.caseSummary[g]||0;
+                        const col = gradeMeta[g]?.color||"#c8934a";
+                        return(
+                          <div key={g} style={{display:"flex",alignItems:"center",gap:5}}>
+                            <span style={{width:18,height:18,borderRadius:3,background:col,display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:"#fff",flexShrink:0}}>{g}</span>
+                            <span style={{fontSize:12,fontWeight:600,color:"#2d3752",fontFamily:"DM Sans,sans-serif"}}>{cnt}</span>
+                            <span style={{fontSize:10,color:"#5c6584",fontFamily:"DM Sans,sans-serif"}}>cases</span>
+                          </div>
+                        );
+                      })}
+                    </>)}
+                  </div>
+                  {/* Per-DC breakdown rows when Total Qty active */}
+                  {useDistribSummary&&[...dcSummaryData.dcOrder].reverse().map(dc=>{
+                    const {total,grades} = dcSummaryData.dcBreakdown[dc]||{total:0,grades:{}};
+                    return(
+                      <div key={dc} style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap",paddingTop:6,borderTop:"1px solid #e0dbd4"}}>
+                        <span style={{fontSize:11,fontWeight:700,color:"#2d3752",fontFamily:"DM Sans,sans-serif",minWidth:100}}>{dc.replace("DC","")}</span>
+                        <span style={{fontSize:13,fontWeight:700,color:"#7c3aed",fontFamily:"DM Sans,sans-serif"}}>{total.toLocaleString()}</span>
+                        <span style={{fontSize:10,color:"#5c6584",fontFamily:"DM Sans,sans-serif",marginRight:6}}>cases</span>
+                        <div style={{width:1,height:18,background:"#d8d3c9"}}/>
+                        {gradeOrder.map(g=>{
+                          const cnt = grades[g]||0;
+                          const col = gradeMeta[g]?.color||"#c8934a";
+                          return(
+                            <div key={g} style={{display:"flex",alignItems:"center",gap:4}}>
+                              <span style={{width:16,height:16,borderRadius:3,background:col,display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:8,fontWeight:700,color:"#fff",flexShrink:0}}>{g}</span>
+                              <span style={{fontSize:11,fontWeight:600,color:"#2d3752",fontFamily:"DM Sans,sans-serif"}}>{cnt}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })}
                 </div>
 
                 <div style={{overflowX:"auto"}}>
