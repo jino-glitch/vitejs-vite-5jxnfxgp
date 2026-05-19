@@ -238,7 +238,6 @@ export default function App() {
   const DC_LIST = ["DALLASTXDC","DENVERCODC","FOURSEASON","FULRTNCADC","ORLNDOFLDC","PHOENXAZDC","TRACYCADC"];
   const [dcShipDates, setDcShipDates] = useState({"DALLASTXDC":"","DENVERCODC":"","FOURSEASON":"","FULRTNCADC":"","ORLNDOFLDC":"","PHOENXAZDC":"","TRACYCADC":""});
   const [skuNumber, setSkuNumber] = useState("");
-  const [dcShipDates, setDcShipDates] = useState({});
   const [rankRules, setRankRules] = useState([
     {grade:"A", min:"0.41", max:"0.70", qty:"1"},
     {grade:"B", min:"0.31", max:"0.40", qty:"1"},
