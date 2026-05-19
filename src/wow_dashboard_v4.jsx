@@ -236,7 +236,10 @@ export default function App() {
   const [skuDragOver, setSkuDragOver] = useState(false);
   const [skuNumber, setSkuNumber] = useState("");
   const DC_LIST = ["DALLASTXDC","DENVERCODC","FOURSEASON","FULRTNCADC","ORLNDOFLDC","PHOENXAZDC","TRACYCADC"];
-  const [dcShipDates, setDcShipDates] = useState({"DALLASTXDC":"","DENVERCODC":"","FOURSEASON":"","FULRTNCADC":"","ORLNDOFLDC":"","PHOENXAZDC":"","TRACYCADC":""});
+  const [globalShipDate, setGlobalShipDate] = useState(()=>{
+    const d = new Date(); d.setDate(d.getDate()+1);
+    return d.toISOString().slice(0,10);
+  });
   const [rankRules, setRankRules] = useState([
     {grade:"A", min:"0.41", max:"0.70", qty:"1"},
     {grade:"B", min:"0.31", max:"0.40", qty:"1"},
@@ -1088,8 +1091,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
       const {qty} = resolveRank(r.pct);
       const dc = normDC(r.dc);
       const formattedSKU = skuNumber ? "DC"+skuNumber : "";
-      const formattedDate = shipDate ? shipDate.replace(/-/g,"") : "";
-      return [formattedSKU, Number(r.store), qty, dc, formattedDate];
+      return [formattedSKU, Number(r.store), qty, dc, shipDate];
     };
     const makeDCSheet = (rows, shipDate) => {
       const ws = XLSX.utils.aoa_to_sheet([dcHeaders, ...rows.map(r=>toDCRow(r, shipDate))]);
@@ -1108,7 +1110,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
       const dcRows = matched.filter(r=>r.dc===dc);
       if (dcRows.length===0) return;
       const tabName = normDC(dc);
-      const shipDate = dcShipDates[dc]||"";
+      const shipDate = globalShipDate ? globalShipDate.replace(/-/g,"") : "";
       XLSX.utils.book_append_sheet(wb, makeDCSheet(dcRows, shipDate), tabName);
     });
     if (unmatched.length>0) {
@@ -2672,16 +2674,6 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
             <div style={{width:4,height:24,background:"#0f766e",borderRadius:2}}/>
             <span style={{fontSize:16,fontWeight:700,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif",letterSpacing:0.3}}>ALLOCATIONS (IN&OUT)</span>
             <span style={{fontSize:11,color:"#5c6584",fontFamily:"DM Sans,sans-serif",marginLeft:4}}>Upload a store-level floral mix file to enrich with DC / District data</span>
-            <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:8}}>
-              <span style={{fontSize:11,fontWeight:700,color:"#2d3752",fontFamily:"DM Sans,sans-serif"}}>SKU</span>
-              <input
-                type="text"
-                placeholder="SKU number"
-                value={skuNumber}
-                onChange={e=>setSkuNumber(e.target.value)}
-                style={{padding:"5px 10px",border:"1px solid #d8d3c9",borderRadius:6,fontSize:12,fontFamily:"DM Sans,sans-serif",width:140,background:"#fff",color:"#0a0f1e"}}
-              />
-            </div>
           </div>
 
           {/* Rank Rules Config */}
@@ -2779,33 +2771,19 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                   })}
                 </div>
 
-                {/* DC Ship Dates */}
-                {(()=>{
-                  const DC_ORDER = ["DALLASTXDC","DENVERCODC","FOURSEASON","FULRTNCADC","ORLNDOFLDC","PHOENXAZDC","UNCITYCADC"];
-                  const activeDCs = DC_ORDER.filter(dc=>matched.some(r=>r.dc===dc));
-                  if (activeDCs.length===0) return null;
-                  return(
-                    <div style={{marginBottom:16,background:"#f5f4f0",border:"1px solid #e0dbd4",borderRadius:8,padding:"14px 16px"}}>
-                      <div style={{fontSize:11,fontWeight:700,color:"#2d3752",fontFamily:"DM Sans,sans-serif",letterSpacing:0.4,marginBottom:10}}>SHIP DATES &nbsp;<span style={{fontWeight:400,color:"#5c6584"}}>Set ship date per DC</span></div>
-                      <div style={{display:"flex",flexWrap:"wrap",gap:12}}>
-                        {activeDCs.map(dc=>{
-                          const label = dc==="UNCITYCADC"?"TRACYCADC":dc;
-                          return(
-                            <div key={dc} style={{display:"flex",alignItems:"center",gap:8}}>
-                              <span style={{fontSize:11,fontWeight:600,color:"#2d3752",fontFamily:"DM Sans,sans-serif",minWidth:100}}>{label}</span>
-                              <input
-                                type="date"
-                                value={dcShipDates[dc]||""}
-                                onChange={e=>{setDcShipDates(prev=>({...prev,[dc]:e.target.value}));}}
-                                style={{padding:"4px 8px",border:"1px solid #d8d3c9",borderRadius:5,fontSize:11,fontFamily:"DM Sans,sans-serif",background:"#fff",color:"#0a0f1e"}}
-                              />
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  );
-                })()}
+                {/* SKU + Global Ship Date */}
+                <div style={{display:"flex",alignItems:"center",gap:24,padding:"12px 16px",marginBottom:12,background:"#f5f4f0",border:"1px solid #e0dbd4",borderRadius:8}}>
+                  <div style={{display:"flex",alignItems:"center",gap:8}}>
+                    <span style={{fontSize:12,fontWeight:700,color:"#2d3752",fontFamily:"DM Sans,sans-serif"}}>SKU</span>
+                    <input type="text" placeholder="SKU number" value={skuNumber} onChange={e=>setSkuNumber(e.target.value)}
+                      style={{width:140,padding:"5px 10px",border:"1px solid #d8d3c9",borderRadius:6,fontSize:12,fontFamily:"DM Sans,sans-serif",background:"#fff",color:"#0a0f1e"}}/>
+                  </div>
+                  <div style={{display:"flex",alignItems:"center",gap:8}}>
+                    <span style={{fontSize:12,fontWeight:700,color:"#2d3752",fontFamily:"DM Sans,sans-serif"}}>Ship Date</span>
+                    <input type="date" value={globalShipDate} onChange={e=>setGlobalShipDate(e.target.value)}
+                      style={{padding:"5px 10px",border:"1px solid #d8d3c9",borderRadius:6,fontSize:12,fontFamily:"DM Sans,sans-serif",background:"#fff",color:"#0a0f1e"}}/>
+                  </div>
+                </div>
 
                 <div style={{overflowX:"auto"}}>
                 <table style={{width:"100%",borderCollapse:"collapse",fontSize:11,fontFamily:"DM Sans,sans-serif"}}>
