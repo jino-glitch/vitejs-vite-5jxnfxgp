@@ -1062,19 +1062,40 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
     const headers = ["DC","Region","District","Store","Store Description","% to Store","Rank","Qty"];
     const matched = skuFile.rows.filter(r=>r.matched);
     const unmatched = skuFile.rows.filter(r=>!r.matched);
-    const wsData = [
-      headers,
-      ...[...matched,...unmatched].map(r=>{
-        const {grade,qty} = resolveRank(r.pct);
-        return r.matched
-          ? [r.dc, r.region, r.district, Number(r.store), r.storeDesc, parseFloat((r.pct*100).toFixed(4)), grade, qty]
-          : ["—","—","—", Number(r.store), "Unmatched store", parseFloat((r.pct*100).toFixed(4)), "—", "—"];
-      })
-    ];
-    const ws = XLSX.utils.aoa_to_sheet(wsData);
-    ws["!cols"] = [{wch:14},{wch:12},{wch:24},{wch:8},{wch:52},{wch:12},{wch:8},{wch:8}];
+    const allRows = [...matched,...unmatched];
+
+    const toRow = (r) => {
+      const {grade,qty} = resolveRank(r.pct);
+      const dc = r.matched ? (r.dc==="UNCITYCADC"?"TRACYCADC":r.dc) : "—";
+      return r.matched
+        ? [dc, r.region, r.district, Number(r.store), r.storeDesc, parseFloat((r.pct*100).toFixed(4)), grade, qty]
+        : ["—","—","—", Number(r.store), "Unmatched store", parseFloat((r.pct*100).toFixed(4)), "—", "—"];
+    };
+
+    const makeSheet = (rows) => {
+      const ws = XLSX.utils.aoa_to_sheet([headers, ...rows.map(toRow)]);
+      ws["!cols"] = [{wch:14},{wch:12},{wch:24},{wch:8},{wch:52},{wch:12},{wch:8},{wch:8}];
+      return ws;
+    };
+
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Allocations (In&Out)");
+
+    // Tab 1: all rows
+    XLSX.utils.book_append_sheet(wb, makeSheet(allRows), "Allocations (In&Out)");
+
+    // Per-DC tabs — UNCITYCADC renamed to TRACYCADC
+    const DC_ORDER = ["DALLASTXDC","DENVERCODC","FOURSEASON","FULRTNCADC","ORLNDOFLDC","PHOENXAZDC","UNCITYCADC"];
+    DC_ORDER.forEach(dc => {
+      const dcRows = matched.filter(r=>r.dc===dc);
+      if (dcRows.length===0) return;
+      const tabName = dc==="UNCITYCADC"?"TRACYCADC":dc;
+      XLSX.utils.book_append_sheet(wb, makeSheet(dcRows), tabName);
+    });
+    // Unmatched on last tab if any
+    if (unmatched.length>0) {
+      XLSX.utils.book_append_sheet(wb, makeSheet(unmatched), "Unmatched");
+    }
+
     const outName = skuFile.name.replace(/\.xlsx$/i,"") + "_enriched.xlsx";
     XLSX.writeFile(wb, outName);
   };
@@ -2744,7 +2765,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                       const gradeColor = {A:"#4ade80",B:"#86efac",C:"#f5a623",D:"#fb923c",F:"#f87171"}[grade]||null;
                       return(
                       <tr key={i} style={{background:!r.matched?"#fff8f8":i%2===0?"#fafaf8":"#f5f4f0",borderBottom:"1px solid #e8e4df"}}>
-                        <td style={{padding:"7px 12px",color:r.matched?"#2d3752":"#f87171",fontWeight:600}}>{r.matched?r.dc:"—"}</td>
+                        <td style={{padding:"7px 12px",color:r.matched?"#2d3752":"#f87171",fontWeight:600}}>{r.matched?(r.dc==="UNCITYCADC"?"TRACYCADC":r.dc):"—"}</td>
                         <td style={{padding:"7px 12px",color:"#5c6584"}}>{r.matched?r.region:"—"}</td>
                         <td style={{padding:"7px 12px",color:"#2d3752"}}>{r.matched?r.district:"—"}</td>
                         <td style={{padding:"7px 12px",color:"#2d3752",fontWeight:600}}>{r.store}</td>
