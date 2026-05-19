@@ -243,6 +243,7 @@ export default function App() {
     const d = new Date(); d.setDate(d.getDate()+1);
     return d.toISOString().slice(0,10);
   });
+  const [rankOpen, setRankOpen] = useState(false);
   const [rankRules, setRankRules] = useState([
     {grade:"A", min:"0.61", max:"1.02", qty:"1"},
     {grade:"B", min:"0.31", max:"0.60", qty:"1"},
@@ -2751,8 +2752,12 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
 
           {/* Rank Rules Config */}
           <div style={{marginBottom:16,background:"#f5f4f0",border:"1px solid #e0dbd4",borderRadius:8,padding:"14px 16px"}}>
-            <div style={{fontSize:11,fontWeight:700,color:"#2d3752",fontFamily:"DM Sans,sans-serif",letterSpacing:0.4,marginBottom:10}}>RANK RULES &nbsp;<span style={{fontWeight:400,color:"#5c6584"}}>Enter % to Store range and case qty per grade</span></div>
-            <div style={{display:"flex",flexDirection:"column",gap:6}}>
+            <div onClick={()=>setRankOpen(o=>!o)} style={{display:"flex",alignItems:"center",cursor:"pointer",userSelect:"none"}}>
+              <span style={{fontSize:11,fontWeight:700,color:"#2d3752",fontFamily:"DM Sans,sans-serif",letterSpacing:0.4}}>RANK RULES</span>
+              <span style={{fontSize:11,fontWeight:400,color:"#5c6584",fontFamily:"DM Sans,sans-serif",marginLeft:6}}>Enter % to Store range and case qty per grade</span>
+              <span style={{marginLeft:"auto",fontSize:12,color:"#5c6584",transform:rankOpen?"rotate(180deg)":"rotate(0deg)",transition:"transform 0.2s"}}>▾</span>
+            </div>
+            {rankOpen&&<div style={{display:"flex",flexDirection:"column",gap:6,marginTop:10}}>
               {rankRules.map((r,i)=>{
                 const gradeColor = {A:"#4ade80",B:"#86efac",C:"#f5a623",D:"#fb923c",F:"#f87171"}[r.grade]||"#c8934a";
                 return(
@@ -2782,7 +2787,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                   </div>
                 );
               })}
-            </div>
+            </div>}
           </div>
 
           {/* Upload bar — always visible */}
