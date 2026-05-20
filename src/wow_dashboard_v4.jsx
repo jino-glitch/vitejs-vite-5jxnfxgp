@@ -1071,20 +1071,27 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
   const distributeQty = (rows, qty) => {
     const intQty = Math.floor(Number(qty));
     if (!intQty || intQty <= 0) return {};
+    // Eligible = stores with grade qty > 0 (D/F have qty=0, excluded)
     const eligible = rows.filter(r => {
-      const {grade} = resolveRank(r.pct);
-      return grade && grade !== 'D' && grade !== 'F' && grade !== '—';
+      const {qty: gradeQty} = resolveRank(r.pct);
+      const q = parseInt(gradeQty) || 0;
+      return q > 0;
     });
     if (eligible.length === 0) return {};
-    const totalPct = eligible.reduce((s, r) => s + r.pct, 0);
-    if (totalPct === 0) return {};
+    // Weight = % to Store × grade qty multiplier
+    const getWeight = (r) => {
+      const {qty: gradeQty} = resolveRank(r.pct);
+      return r.pct * (parseInt(gradeQty) || 1);
+    };
+    const totalWeight = eligible.reduce((s, r) => s + getWeight(r), 0);
+    if (totalWeight === 0) return {};
     // Floor pass
     const allocs = {};
-    eligible.forEach(r => { allocs[r.store] = Math.floor((r.pct / totalPct) * intQty); });
+    eligible.forEach(r => { allocs[r.store] = Math.floor((getWeight(r) / totalWeight) * intQty); });
     let used = Object.values(allocs).reduce((s, v) => s + v, 0);
     let remainder = intQty - used;
-    // Distribute remainder to highest pct stores
-    const sorted = [...eligible].sort((a, b) => b.pct - a.pct);
+    // Distribute remainder to highest weight stores
+    const sorted = [...eligible].sort((a, b) => getWeight(b) - getWeight(a));
     let i = 0;
     while (remainder > 0) {
       allocs[sorted[i % sorted.length].store]++;
@@ -2911,8 +2918,14 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                 dcGroups[dc].push(r);
               });
               const dcList = Object.keys(dcGroups);
+              // DC weight = sum of (store pct × grade qty multiplier) per DC
+              const getDCWeight = (rows) => rows.reduce((s,r)=>{
+                const {qty:gq} = resolveRank(r.pct);
+                const q = parseInt(gq)||0;
+                return s + (q > 0 ? r.pct * q : 0);
+              }, 0);
               const dcPctTotals = {};
-              dcList.forEach(dc=>{ dcPctTotals[dc] = dcGroups[dc].reduce((s,r)=>s+r.pct,0); });
+              dcList.forEach(dc=>{ dcPctTotals[dc] = getDCWeight(dcGroups[dc]); });
               const grandPct = Object.values(dcPctTotals).reduce((s,v)=>s+v,0);
               // Floor allocate per DC
               const dcAllocs = {};
