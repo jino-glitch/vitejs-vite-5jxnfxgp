@@ -1058,11 +1058,11 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
 
   // ── ALLOCATIONS (IN&OUT) UPLOAD ─────────────────────────────────────────────────────
   const loadXLSX = () => new Promise((res, rej) => {
-    const xlsxObj = window.XLSXStyle || window.XLSX;
+    const xlsxObj = window.XLSX;
     if (xlsxObj) { res(xlsxObj); return; }
     const s = document.createElement("script");
-    s.src = "https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsxjs.min.js";
-    s.onload = () => res(window.XLSXStyle || window.XLSX);
+    s.src = "https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.min.js";
+    s.onload = () => res(window.XLSX);
     s.onerror = () => rej(new Error("Failed to load XLSX"));
     document.head.appendChild(s);
   });
@@ -1390,14 +1390,14 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
 
   const exportAllocation = () => {
     if(typeof window.XLSXStyle !== 'undefined' || typeof window.XLSX !== 'undefined'){
-      runExport(window.XLSXStyle || window.XLSX);
+      runExport(window.XLSX);
     } else {
       const existing = document.getElementById('sheetjs-script');
-      if(existing){ existing.addEventListener('load', ()=>runExport(window.XLSXStyle || window.XLSX)); return; }
+      if(existing){ existing.addEventListener('load', ()=>runExport(window.XLSX)); return; }
       const script = document.createElement('script');
       script.id = 'sheetjs-script';
-      script.src = 'https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsxjs.min.js';
-      script.onload = () => runExport(window.XLSXStyle || window.XLSX);
+      script.src = 'https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.min.js';
+      script.onload = () => runExport(window.XLSX);
       script.onerror = () => alert('Failed to load Excel library. Check your connection.');
       document.head.appendChild(script);
     }
