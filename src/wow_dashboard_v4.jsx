@@ -1259,7 +1259,9 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
       if (!allocSelectedDCs.includes(normName) && !allocSelectedDCs.includes(dc)) return;
       const dcRows = matched.filter(r=>r.dc===dc);
       if (dcRows.length===0) return;
-      XLSX.utils.book_append_sheet(wb, makeDCSheet(dcRows, shipDateStr), normName);
+      const dcRowsWithQty = dcRows.filter(r=>resolveDisplayQty(r)>0);
+      if (dcRowsWithQty.length===0) return;
+      XLSX.utils.book_append_sheet(wb, makeDCSheet(dcRowsWithQty, shipDateStr), normName);
     });
     if (unmatched.length>0) {
       XLSX.utils.book_append_sheet(wb, makeSummarySheet(unmatched), "Unmatched");
