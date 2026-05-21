@@ -238,7 +238,7 @@ export default function App() {
   const [skuCost, setSkuCost] = useState("");
   const [totalQty, setTotalQty] = useState("");
   const DC_LIST = ["FULRTNCADC","TRACYCADC","PHOENXAZDC","DENVERCODC","DALLASTXDC","ORLNDOFLDC","FOURSEASON"];
-  const [allocSelectedDCs, setAllocSelectedDCs] = useState([...DC_LIST]);
+  const [allocSelectedDCs, setAllocSelectedDCs] = useState([]);
   const [globalShipDate, setGlobalShipDate] = useState(()=>{
     const d = new Date(); d.setDate(d.getDate()+1);
     return d.toISOString().slice(0,10);
