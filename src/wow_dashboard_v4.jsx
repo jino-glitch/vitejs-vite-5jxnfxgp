@@ -2905,16 +2905,22 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
             const dcSummaryData = (() => {
               const matchedSel = skuFile.rows.filter(r=>r.matched&&(allocSelectedDCs.includes(normDCSummary(r.dc))||allocSelectedDCs.includes(r.dc)));
               if (!useDistribSummary) {
-                // Default mode: sum rank rule qty per grade globally
+                // Default mode: sum rank rule qty per grade, globally and per-DC
                 const caseSummary = {};
                 let totalCases = 0;
+                const dcBreakdown = {};
                 matchedSel.forEach(r=>{
                   const {grade,qty} = resolveRank(r.pct);
                   const q = parseInt(qty)||0;
                   totalCases += q;
                   if (grade!=="—") caseSummary[grade] = (caseSummary[grade]||0) + q;
+                  const dc = normDCSummary(r.dc);
+                  if (!dcBreakdown[dc]) dcBreakdown[dc] = {total:0, grades:{A:0,B:0,C:0,D:0,F:0}};
+                  dcBreakdown[dc].total += q;
+                  if (dcBreakdown[dc].grades[grade]!==undefined) dcBreakdown[dc].grades[grade] += q;
                 });
-                return {mode:"global", totalCases, caseSummary};
+                const dcOrder = Object.keys(dcBreakdown).sort();
+                return {mode:"global", totalCases, caseSummary, dcBreakdown, dcOrder};
               }
               // Distribution mode: allocate Total Qty across DCs proportionally, then within each DC
               const intQty = Math.floor(Number(totalQty));
@@ -3021,13 +3027,14 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                       })}
                     </>)}
                   </div>
-                  {/* Per-DC breakdown rows when Total Qty active */}
-                  {useDistribSummary&&[...dcSummaryData.dcOrder].reverse().map(dc=>{
+                  {/* Per-DC breakdown rows — always shown */}
+                  {dcSummaryData.dcOrder&&dcSummaryData.dcOrder.map(dc=>{
                     const {total,grades} = dcSummaryData.dcBreakdown[dc]||{total:0,grades:{}};
+                    const totalColor = useDistribSummary ? "#7c3aed" : "#0f766e";
                     return(
                       <div key={dc} style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap",paddingTop:6,borderTop:"1px solid #e0dbd4"}}>
-                        <span style={{fontSize:11,fontWeight:700,color:"#2d3752",fontFamily:"DM Sans,sans-serif",minWidth:100}}>{dc.replace("DC","")}</span>
-                        <span style={{fontSize:13,fontWeight:700,color:"#7c3aed",fontFamily:"DM Sans,sans-serif"}}>{total.toLocaleString()}</span>
+                        <span style={{fontSize:11,fontWeight:700,color:"#2d3752",fontFamily:"DM Sans,sans-serif",minWidth:110}}>{dc.replace("DC","")}</span>
+                        <span style={{fontSize:13,fontWeight:700,color:totalColor,fontFamily:"DM Sans,sans-serif"}}>{total.toLocaleString()}</span>
                         <span style={{fontSize:10,color:"#5c6584",fontFamily:"DM Sans,sans-serif",marginRight:6}}>cases</span>
                         <div style={{width:1,height:18,background:"#d8d3c9"}}/>
                         {gradeOrder.map(g=>{
