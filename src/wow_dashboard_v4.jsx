@@ -2944,7 +2944,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                   dcBreakdown[dc].total += q;
                   if (dcBreakdown[dc].grades[grade]!==undefined) dcBreakdown[dc].grades[grade] += q;
                 });
-                const dcOrder = Object.keys(dcBreakdown).sort();
+                const dcOrder = DC_LIST.filter(dc=>dcBreakdown[dc]);
                 return {mode:"global", totalCases, caseSummary, dcBreakdown, dcOrder};
               }
               // Distribution mode: rank-rule base per DC, then surplus/deficit by pct
@@ -2971,17 +2971,18 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
               const dcAllocs = {...dcRuleTotals};
               const dcPctTotals = {};
               dcList.forEach(dc=>{ dcPctTotals[dc] = dcGroups[dc].reduce((s,r)=>s+r.pct,0); });
-              const sortedDCs = [...dcList].sort((a,b)=>dcPctTotals[b]-dcPctTotals[a]);
+              const sortedDCs = DC_LIST.filter(dc=>dcList.includes(dc));
+              const pctSortedDCs = [...dcList].sort((a,b)=>dcPctTotals[b]-dcPctTotals[a]);
 
               if (intQty >= ruleGrandTotal) {
                 // Surplus: add to highest pct DCs first
                 let rem = intQty - ruleGrandTotal;
                 let i = 0;
-                while (rem>0) { dcAllocs[sortedDCs[i%sortedDCs.length]]++; rem--; i++; }
+                while (rem>0) { dcAllocs[pctSortedDCs[i%pctSortedDCs.length]]++; rem--; i++; }
               } else {
                 // Deficit: remove from lowest pct DCs first
                 let deficit = ruleGrandTotal - intQty;
-                const reversedDCs = [...sortedDCs].reverse();
+                const reversedDCs = [...pctSortedDCs].reverse();
                 let i = 0;
                 while (deficit>0) {
                   const dc = reversedDCs[i%reversedDCs.length];
