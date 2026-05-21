@@ -1060,7 +1060,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
   const loadXLSX = () => new Promise((res, rej) => {
     if (window.XLSX) { res(window.XLSX); return; }
     const s = document.createElement("script");
-    s.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
+    s.src = "https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsxjs.min.js";
     s.onload = () => res(window.XLSX);
     s.onerror = () => rej(new Error("Failed to load XLSX"));
     document.head.appendChild(s);
@@ -1111,12 +1111,10 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
     const XLSX = await loadXLSX();
     const normDC = (dc) => dc==="UNCITYCADC"?"TRACYCADC":dc;
 
-    // Filter matched rows by selected DCs only
     const matchedAll = skuFile.rows.filter(r=>r.matched);
     const matched = matchedAll.filter(r=>allocSelectedDCs.includes(normDC(r.dc))||allocSelectedDCs.includes(r.dc));
     const unmatched = skuFile.rows.filter(r=>!r.matched);
 
-    // Compute distribution if totalQty provided
     const useDistrib = totalQty && Number(totalQty) > 0;
     const distrib = useDistrib ? distributeQty(matched, totalQty) : null;
 
@@ -1126,9 +1124,26 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
       return (qty==="—"||qty===""||qty===undefined) ? 0 : Number(qty);
     };
 
-    const allRows = [...matched, ...unmatched]; // matched already filtered by selected DCs
+    const allRows = [...matched, ...unmatched];
 
-    // Summary tab
+    // ── Style helpers ──
+    const blueHdr  = {font:{bold:true,color:{rgb:"FFFFFF"},sz:11},fill:{fgColor:{rgb:"4472C4"}},alignment:{horizontal:"center",vertical:"center"},border:{bottom:{style:"thin",color:{rgb:"FFFFFF"}}}};
+    const greenHdr = {font:{bold:true,color:{rgb:"FFFFFF"},sz:11},fill:{fgColor:{rgb:"1F7145"}},alignment:{horizontal:"center",vertical:"center"}};
+    const boldCell = {font:{bold:true,sz:11}};
+    const plainCell= {font:{sz:11}};
+    const titleSt  = {font:{bold:false,sz:11}};
+
+    const sc = (v, s) => ({v, s, t: typeof v==="number" ? "n" : "s"});
+
+    const applyStyle = (ws, rowIdx, colCount, style) => {
+      for (let c=0; c<colCount; c++) {
+        const addr = XLSX.utils.encode_cell({r:rowIdx,c});
+        if (!ws[addr]) ws[addr] = {v:"",t:"s"};
+        ws[addr].s = style;
+      }
+    };
+
+    // ── Appendix/Unmatched sheet (unchanged layout, blue header) ──
     const summaryHeaders = ["DC","Region","District","Store","Store Description","% to Store","Rank","Qty"];
     const toSummaryRow = (r) => {
       const {grade} = resolveRank(r.pct);
@@ -1138,12 +1153,14 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
         : ["—","—","—", Number(r.store), "Unmatched store", parseFloat((r.pct*100).toFixed(4)), "—", "—"];
     };
     const makeSummarySheet = (rows) => {
-      const ws = XLSX.utils.aoa_to_sheet([summaryHeaders, ...rows.map(toSummaryRow)]);
+      const data = [summaryHeaders, ...rows.map(toSummaryRow)];
+      const ws = XLSX.utils.aoa_to_sheet(data);
       ws["!cols"] = [{wch:14},{wch:12},{wch:24},{wch:8},{wch:52},{wch:12},{wch:8},{wch:8}];
+      applyStyle(ws, 0, summaryHeaders.length, blueHdr);
       return ws;
     };
 
-    // DC tabs
+    // ── DC tab builder — green header ──
     const dcHeaders = ["SKU","Store","Qty","DC","Ship Date"];
     const toDCRow = (r, shipDate) => {
       const dc = normDC(r.dc);
@@ -1152,25 +1169,40 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
       return [formattedSKU, Number(r.store), qtyVal===0?"":qtyVal, dc, shipDate];
     };
     const makeDCSheet = (rows, shipDate) => {
-      const ws = XLSX.utils.aoa_to_sheet([dcHeaders, ...rows.map(r=>toDCRow(r, shipDate))]);
-      ws["!cols"] = [{wch:14},{wch:8},{wch:8},{wch:14},{wch:14}];
+      const data = [dcHeaders, ...rows.map(r=>toDCRow(r, shipDate))];
+      const ws = XLSX.utils.aoa_to_sheet(data);
+      ws["!cols"] = [{wch:12},{wch:10},{wch:8},{wch:14},{wch:12}];
+      // Green bold header
+      dcHeaders.forEach((_,c) => {
+        const addr = XLSX.utils.encode_cell({r:0,c});
+        if (!ws[addr]) ws[addr]={v:"",t:"s"};
+        ws[addr].s = greenHdr;
+      });
+      // Plain data rows
+      for (let ri=1; ri<data.length; ri++) {
+        for (let c=0; c<dcHeaders.length; c++) {
+          const addr = XLSX.utils.encode_cell({r:ri,c});
+          if (!ws[addr]) ws[addr]={v:"",t:"s"};
+          ws[addr].s = plainCell;
+        }
+      }
       return ws;
     };
 
     const wb = XLSX.utils.book_new();
 
-    // ── Summary tab (first) ──
+    // ── Summary tab — blue header, bold TOTAL ──
     const DC_ORDER = ["DALLASTXDC","DENVERCODC","FOURSEASON","FULRTNCADC","ORLNDOFLDC","PHOENXAZDC","UNCITYCADC"];
     const now = new Date().toLocaleString("en-US",{month:"numeric",day:"numeric",year:"numeric",hour:"numeric",minute:"2-digit"});
     const skuLabel = skuNumber ? "DC"+skuNumber : "—";
     const titleStr = "Allocation Summary — "+skuLabel+" — Generated: "+now;
     const shipDateStr = globalShipDate ? globalShipDate.replace(/-/g,"") : "";
+    const summHdrs = ["DC","Ship Date","PO Inbound Date","Item #","Total Cases","Stores","Case Cost"];
 
-    // Build per-DC summary rows
     const summaryTabRows = [];
-    summaryTabRows.push([titleStr,"","","","",""]);
-    summaryTabRows.push(["","","","","",""]);
-    summaryTabRows.push(["DC","Ship Date","Item #","Total Cases","Stores","Case Cost"]);
+    summaryTabRows.push([titleStr,"","","","","",""]);   // row 0 — title
+    summaryTabRows.push(["","","","","","",""]);          // row 1 — spacer
+    summaryTabRows.push(summHdrs);                          // row 2 — header
     let grandCases = 0; let grandStores = 0;
     DC_ORDER.forEach(dc => {
       const normName = normDC(dc);
@@ -1179,15 +1211,46 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
       if (dcRows.length===0) return;
       const dcCases = dcRows.reduce((s,r)=>s+resolveDisplayQty(r),0);
       const dcStores = dcRows.filter(r=>resolveDisplayQty(r)>0).length;
+      const poDate = shipDateStr ? String(Number(shipDateStr)+1) : "";
       grandCases += dcCases; grandStores += dcStores;
-      summaryTabRows.push([normName, shipDateStr, skuLabel, dcCases, dcStores, skuCost?parseFloat(skuCost):""]);
+      summaryTabRows.push([normName, shipDateStr, poDate, skuLabel, dcCases, dcStores, skuCost?parseFloat(skuCost):""]);
     });
-    summaryTabRows.push(["","","","","",""]);
-    summaryTabRows.push(["TOTAL","","",grandCases,grandStores,""]);
+    summaryTabRows.push(["","","","","","",""]);           // spacer before total
+    summaryTabRows.push(["TOTAL","","","",grandCases,grandStores,""]);
 
     const summWs = XLSX.utils.aoa_to_sheet(summaryTabRows);
-    summWs["!cols"] = [{wch:14},{wch:12},{wch:12},{wch:14},{wch:10},{wch:12}];
-    summWs["!merges"] = [{s:{r:0,c:0},e:{r:0,c:5}}];
+    summWs["!cols"] = [{wch:14},{wch:12},{wch:16},{wch:12},{wch:14},{wch:10},{wch:12}];
+    summWs["!merges"] = [{s:{r:0,c:0},e:{r:0,c:6}}];
+
+    // Title row style
+    const titleAddr = XLSX.utils.encode_cell({r:0,c:0});
+    if (!summWs[titleAddr]) summWs[titleAddr]={v:titleStr,t:"s"};
+    summWs[titleAddr].s = titleSt;
+
+    // Blue header row (row 2)
+    summHdrs.forEach((_,c) => {
+      const addr = XLSX.utils.encode_cell({r:2,c});
+      if (!summWs[addr]) summWs[addr]={v:"",t:"s"};
+      summWs[addr].s = blueHdr;
+    });
+
+    // Data rows — plain
+    for (let ri=3; ri<summaryTabRows.length-2; ri++) {
+      for (let c=0; c<summHdrs.length; c++) {
+        const addr = XLSX.utils.encode_cell({r:ri,c});
+        if (!summWs[addr]) summWs[addr]={v:"",t:"s"};
+        summWs[addr].s = plainCell;
+      }
+    }
+
+    // TOTAL row — bold
+    const totalRowIdx = summaryTabRows.length - 1;
+    for (let c=0; c<summHdrs.length; c++) {
+      const addr = XLSX.utils.encode_cell({r:totalRowIdx,c});
+      if (!summWs[addr]) summWs[addr]={v:"",t:"s"};
+      summWs[addr].s = boldCell;
+    }
+
     XLSX.utils.book_append_sheet(wb, summWs, "Summary");
 
     // ── Per-DC tabs ──
@@ -1203,8 +1266,8 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
     }
     XLSX.utils.book_append_sheet(wb, makeSummarySheet(allRows), "Appendix");
 
-    const outName = skuFile.name.replace(/.xlsx$/i,"") + "_enriched.xlsx";
-    XLSX.writeFile(wb, outName);
+    const outName = (skuNumber ? "DC"+skuNumber : "Allocation") + "_enriched.xlsx";
+    XLSX.writeFile(wb, outName, {cellStyles:true});
   };
 
   const handleSkuUpload = (file) => {
@@ -1330,7 +1393,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
       if(existing){ existing.addEventListener('load', ()=>runExport(window.XLSX)); return; }
       const script = document.createElement('script');
       script.id = 'sheetjs-script';
-      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+      script.src = 'https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsxjs.min.js';
       script.onload = () => runExport(window.XLSX);
       script.onerror = () => alert('Failed to load Excel library. Check your connection.');
       document.head.appendChild(script);
