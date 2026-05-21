@@ -1128,10 +1128,13 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
     const allRows = [...matched, ...unmatched];
 
     // ── Style helpers ──
-    const blueHdr  = {font:{bold:true,color:{rgb:"FFFFFF"},sz:11},fill:{fgColor:{rgb:"4472C4"}},alignment:{horizontal:"center",vertical:"center"},border:{bottom:{style:"thin",color:{rgb:"FFFFFF"}}}};
-    const greenHdr = {font:{bold:true,color:{rgb:"FFFFFF"},sz:11},fill:{fgColor:{rgb:"1F7145"}},alignment:{horizontal:"center",vertical:"center"}};
-    const boldCell = {font:{bold:true,sz:11}};
-    const plainCell= {font:{sz:11}};
+    const ctr = {horizontal:"center",vertical:"center"};
+    const blueHdr  = {font:{bold:true,color:{rgb:"FFFFFF"},sz:11},fill:{fgColor:{rgb:"4472C4"}},alignment:ctr,border:{bottom:{style:"thin",color:{rgb:"FFFFFF"}}}};
+    const greenHdr = {font:{bold:true,color:{rgb:"FFFFFF"},sz:11},fill:{fgColor:{rgb:"1F7145"}},alignment:ctr};
+    const boldCell = {font:{bold:true,sz:11},alignment:ctr};
+    const plainCell= {font:{sz:11},alignment:ctr};
+    const moneySt  = {font:{sz:11},alignment:ctr,numFmt:"$#,##0.00"};
+    const boldMoney= {font:{bold:true,sz:11},alignment:ctr,numFmt:"$#,##0.00"};
     const titleSt  = {font:{bold:false,sz:11}};
 
     const sc = (v, s) => ({v, s, t: typeof v==="number" ? "n" : "s"});
@@ -1235,21 +1238,21 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
       summWs[addr].s = blueHdr;
     });
 
-    // Data rows — plain
+    // Data rows — plain, Case Cost col gets $ format
     for (let ri=3; ri<summaryTabRows.length-2; ri++) {
       for (let c=0; c<summHdrs.length; c++) {
         const addr = XLSX.utils.encode_cell({r:ri,c});
         if (!summWs[addr]) summWs[addr]={v:"",t:"s"};
-        summWs[addr].s = plainCell;
+        summWs[addr].s = c===6 ? moneySt : plainCell;
       }
     }
 
-    // TOTAL row — bold
+    // TOTAL row — bold, Case Cost col gets $ format
     const totalRowIdx = summaryTabRows.length - 1;
     for (let c=0; c<summHdrs.length; c++) {
       const addr = XLSX.utils.encode_cell({r:totalRowIdx,c});
       if (!summWs[addr]) summWs[addr]={v:"",t:"s"};
-      summWs[addr].s = boldCell;
+      summWs[addr].s = c===6 ? boldMoney : boldCell;
     }
 
     XLSX.utils.book_append_sheet(wb, summWs, "Summary");
