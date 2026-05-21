@@ -1084,26 +1084,51 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
   const distributeQty = (rows, qty) => {
     const intQty = Math.floor(Number(qty));
     if (!intQty || intQty <= 0) return {};
+
+    // Step 1: eligibility from rank rules (D/F always get 0)
     const eligible = rows.filter(r => {
       const {grade} = resolveRank(r.pct);
       return grade && grade !== 'D' && grade !== 'F' && grade !== '—';
     });
     if (eligible.length === 0) return {};
-    const totalPct = eligible.reduce((s, r) => s + r.pct, 0);
-    if (totalPct === 0) return {};
-    // Floor pass
+
+    // Step 2: base qty from rank rules per store
     const allocs = {};
-    eligible.forEach(r => { allocs[r.store] = Math.floor((r.pct / totalPct) * intQty); });
-    let used = Object.values(allocs).reduce((s, v) => s + v, 0);
-    let remainder = intQty - used;
-    // Distribute remainder to highest pct stores
+    eligible.forEach(r => {
+      const {qty: ruleQty} = resolveRank(r.pct);
+      allocs[r.store] = parseInt(ruleQty) || 0;
+    });
+    const ruleTotal = Object.values(allocs).reduce((s, v) => s + v, 0);
+
+    // Sort eligible by pct descending — used for both surplus and deficit
     const sorted = [...eligible].sort((a, b) => b.pct - a.pct);
-    let i = 0;
-    while (remainder > 0) {
-      allocs[sorted[i % sorted.length].store]++;
-      remainder--;
-      i++;
+
+    if (intQty >= ruleTotal) {
+      // Step 3a: surplus — distribute remainder proportionally by pct (highest pct first)
+      let remainder = intQty - ruleTotal;
+      let i = 0;
+      while (remainder > 0) {
+        allocs[sorted[i % sorted.length].store]++;
+        remainder--;
+        i++;
+      }
+    } else {
+      // Step 3b: deficit — remove cases from lowest pct stores first
+      let deficit = ruleTotal - intQty;
+      const reversed = [...sorted].reverse(); // lowest pct first
+      let i = 0;
+      while (deficit > 0) {
+        const store = reversed[i % reversed.length].store;
+        if (allocs[store] > 0) {
+          allocs[store]--;
+          deficit--;
+        }
+        i++;
+        // safety: if all stores at 0, break
+        if (i > reversed.length * 10) break;
+      }
     }
+
     return allocs;
   };
 
