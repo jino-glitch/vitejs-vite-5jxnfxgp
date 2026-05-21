@@ -3004,7 +3004,12 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                 });
                 dcBreakdown[dc] = {total:dcAllocs[dc], grades:gradeCounts};
               });
-              return {mode:"dc", dcBreakdown, dcOrder:sortedDCs, totalCases:intQty};
+              // Aggregate caseSummary from dcBreakdown for global grade row
+              const caseSummary = {};
+              Object.values(dcBreakdown).forEach(({grades})=>{
+                Object.entries(grades).forEach(([g,v])=>{ caseSummary[g]=(caseSummary[g]||0)+v; });
+              });
+              return {mode:"dc", dcBreakdown, dcOrder:sortedDCs, totalCases:intQty, caseSummary};
             })();
 
             return(
@@ -3061,7 +3066,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                       <span style={{fontSize:18,fontWeight:700,color:useDistribSummary?"#7c3aed":"#0f766e",fontFamily:"DM Sans,sans-serif"}}>{dcSummaryData.totalCases}</span>
                       <span style={{fontSize:11,color:"#5c6584",fontFamily:"DM Sans,sans-serif"}}>cases</span>
                     </div>
-                    {!useDistribSummary&&(<>
+                    {(<>
                       <div style={{width:1,height:28,background:"#d8d3c9"}}/>
                       {gradeOrder.map(g=>{
                         const cnt = dcSummaryData.caseSummary[g]||0;
