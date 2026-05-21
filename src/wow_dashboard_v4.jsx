@@ -2947,7 +2947,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                 const dcOrder = Object.keys(dcBreakdown).sort();
                 return {mode:"global", totalCases, caseSummary, dcBreakdown, dcOrder};
               }
-              // Distribution mode: allocate Total Qty across DCs proportionally, then within each DC
+              // Distribution mode: rank-rule base per DC, then surplus/deficit by pct
               const intQty = Math.floor(Number(totalQty));
               const dcGroups = {};
               matchedSel.forEach(r=>{
@@ -2956,18 +2956,42 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                 dcGroups[dc].push(r);
               });
               const dcList = Object.keys(dcGroups);
+
+              // Step 1: each DC's rank-rule base total (eligible stores only)
+              const dcRuleTotals = {};
+              dcList.forEach(dc=>{
+                dcRuleTotals[dc] = dcGroups[dc].reduce((s,r)=>{
+                  const {grade,qty} = resolveRank(r.pct);
+                  return s + (grade&&grade!=='D'&&grade!=='F'&&grade!=='—' ? (parseInt(qty)||0) : 0);
+                }, 0);
+              });
+              const ruleGrandTotal = Object.values(dcRuleTotals).reduce((s,v)=>s+v,0);
+
+              // Step 2: assign base, then handle surplus/deficit across DCs by pct
+              const dcAllocs = {...dcRuleTotals};
               const dcPctTotals = {};
               dcList.forEach(dc=>{ dcPctTotals[dc] = dcGroups[dc].reduce((s,r)=>s+r.pct,0); });
-              const grandPct = Object.values(dcPctTotals).reduce((s,v)=>s+v,0);
-              // Floor allocate per DC
-              const dcAllocs = {};
-              dcList.forEach(dc=>{ dcAllocs[dc] = Math.floor((dcPctTotals[dc]/grandPct)*intQty); });
-              let used = Object.values(dcAllocs).reduce((s,v)=>s+v,0);
-              let rem = intQty - used;
               const sortedDCs = [...dcList].sort((a,b)=>dcPctTotals[b]-dcPctTotals[a]);
-              let i = 0;
-              while (rem>0) { dcAllocs[sortedDCs[i%sortedDCs.length]]++; rem--; i++; }
-              // Within each DC, distribute its allocation to stores, count by grade
+
+              if (intQty >= ruleGrandTotal) {
+                // Surplus: add to highest pct DCs first
+                let rem = intQty - ruleGrandTotal;
+                let i = 0;
+                while (rem>0) { dcAllocs[sortedDCs[i%sortedDCs.length]]++; rem--; i++; }
+              } else {
+                // Deficit: remove from lowest pct DCs first
+                let deficit = ruleGrandTotal - intQty;
+                const reversedDCs = [...sortedDCs].reverse();
+                let i = 0;
+                while (deficit>0) {
+                  const dc = reversedDCs[i%reversedDCs.length];
+                  if (dcAllocs[dc]>0) { dcAllocs[dc]--; deficit--; }
+                  i++;
+                  if (i > reversedDCs.length*10) break;
+                }
+              }
+
+              // Step 3: within each DC, run distributeQty (rank-rule base + proportional)
               const dcBreakdown = {};
               dcList.forEach(dc=>{
                 const rows = dcGroups[dc];
