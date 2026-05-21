@@ -1139,23 +1139,18 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
     };
 
     // DC tabs — SKU · Store · Qty · DC · Ship Date · PO Inbound Date
-    const dcHeaders = ["SKU","Store","Qty","DC","Ship Date","PO Inbound Date"];
+    const dcHeaders = ["SKU","Store","Qty","DC","Ship Date"];
     const toDCRow = (r, shipDate) => {
       const dc = normDC(r.dc);
       const formattedSKU = skuNumber ? "DC"+skuNumber : "";
       const qtyVal = resolveDisplayQty(r);
-      return [formattedSKU, Number(r.store), qtyVal===0?"":qtyVal, dc, shipDate, ""];
+      return [formattedSKU, Number(r.store), qtyVal===0?"":qtyVal, dc, shipDate];
     };
     const makeDCSheet = (rows, shipDate) => {
       const nRows = rows.length;
       const data = [dcHeaders, ...rows.map(r=>toDCRow(r, shipDate))];
       const ws = XLSX.utils.aoa_to_sheet(data);
-      // PO Inbound Date formula: Ship Date col E + 1 (col F = index 5, rows 2..nRows+1)
-      for (let ri = 1; ri <= nRows; ri++) {
-        const cellRef = XLSX.utils.encode_cell({r:ri, c:5});
-        const shipRef = XLSX.utils.encode_cell({r:ri, c:4});
-        ws[cellRef] = {t:'n', f: shipRef+'+1'};
-      }
+
       // Center all cells
       const range = XLSX.utils.decode_range(ws['!ref']);
       for (let R = range.s.r; R <= range.e.r; R++) {
@@ -1170,7 +1165,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
           }
         }
       }
-      ws["!cols"] = [{wch:14},{wch:8},{wch:8},{wch:14},{wch:14},{wch:16}];
+      ws["!cols"] = [{wch:14},{wch:8},{wch:8},{wch:14},{wch:14}];
       // Green table style
       ws["!autofilter"] = {ref: ws["!ref"]};
       return ws;
