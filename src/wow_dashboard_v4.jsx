@@ -2873,21 +2873,21 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                       type="number" step="0.01" min="0" placeholder="min %"
                       value={r.min}
                       onChange={e=>{const u=[...rankRules];u[i]={...u[i],min:e.target.value};setRankRules(u);}}
-                      style={{width:80,padding:"4px 8px",border:"1px solid #d8d3c9",borderRadius:5,fontSize:11,fontFamily:"DM Sans,sans-serif",background:"#fff"}}
+                      style={{width:80,padding:"4px 8px",border:"1px solid #d8d3c9",borderRadius:5,fontSize:11,fontFamily:"DM Sans,sans-serif",background:"#fff",color:"#2d3752"}}
                     />
                     <span style={{fontSize:11,color:"#5c6584",fontFamily:"DM Sans,sans-serif"}}>%  ~</span>
                     <input
                       type="number" step="0.01" min="0" placeholder="max %"
                       value={r.max}
                       onChange={e=>{const u=[...rankRules];u[i]={...u[i],max:e.target.value};setRankRules(u);}}
-                      style={{width:80,padding:"4px 8px",border:"1px solid #d8d3c9",borderRadius:5,fontSize:11,fontFamily:"DM Sans,sans-serif",background:"#fff"}}
+                      style={{width:80,padding:"4px 8px",border:"1px solid #d8d3c9",borderRadius:5,fontSize:11,fontFamily:"DM Sans,sans-serif",background:"#fff",color:"#2d3752"}}
                     />
                     <span style={{fontSize:11,color:"#5c6584",fontFamily:"DM Sans,sans-serif"}}>%  |</span>
                     <input
                       type="number" step="1" min="0" placeholder="qty"
                       value={r.qty}
                       onChange={e=>{const u=[...rankRules];u[i]={...u[i],qty:e.target.value};setRankRules(u);}}
-                      style={{width:60,padding:"4px 8px",border:"1px solid #d8d3c9",borderRadius:5,fontSize:11,fontFamily:"DM Sans,sans-serif",background:"#fff"}}
+                      style={{width:60,padding:"4px 8px",border:"1px solid #d8d3c9",borderRadius:5,fontSize:11,fontFamily:"DM Sans,sans-serif",background:"#fff",color:"#2d3752"}}
                     />
                     <span style={{fontSize:11,color:"#5c6584",fontFamily:"DM Sans,sans-serif"}}>case</span>
                   </div>
