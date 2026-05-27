@@ -244,6 +244,10 @@ export default function App() {
     return d.toISOString().slice(0,10);
   });
   const [rankOpen, setRankOpen] = useState(false);
+  const [activityLogOpen, setActivityLogOpen] = useState(false);
+  const [allocActivityLog, setAllocActivityLog] = useState(()=>{
+    try { return JSON.parse(localStorage.getItem("allocActivityLog")||"[]"); } catch{ return []; }
+  });
   const [rankRules, setRankRules] = useState([
     {grade:"A", min:"0.61", max:"1.02", qty:"1"},
     {grade:"B", min:"0.31", max:"0.60", qty:"1"},
@@ -1301,6 +1305,15 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
     XLSX.writeFile(wb, outName, {cellStyles:true});
   };
 
+  const logAllocActivity = (action, label) => {
+    const entry = { ts: new Date().toLocaleString(), action, label };
+    setAllocActivityLog(prev => {
+      const updated = [entry, ...prev].slice(0, 100);
+      try { localStorage.setItem("allocActivityLog", JSON.stringify(updated)); } catch{}
+      return updated;
+    });
+  };
+
   const handleSkuUpload = (file) => {
     const reader = new FileReader();
     reader.onload = async (e) => {
@@ -1322,6 +1335,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
         }).filter(r=>r.store!=="0");
         const matched = rows.filter(r=>r.matched).length;
         setSkuFile({name:file.name, rows, matched, unmatched:rows.length-matched});
+        logAllocActivity("📥 Upload", file.name);
       } catch(err) { alert("Error parsing file: "+err.message); }
     };
     reader.readAsArrayBuffer(file);
@@ -1539,6 +1553,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
 
       const filename = `Allocation_${catLabel.replace(/[^a-zA-Z0-9]/g,'')}_${fw}_${exportDate}.xlsx`;
       XLSX.writeFile(wb, filename, {cellStyles:true});
+      logAllocActivity("📤 Download", filename);
     } catch(err) {
       alert('Export failed: ' + err.message);
       console.error('Export error:', err);
@@ -2520,6 +2535,30 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
             >
               ⬇ Download Allocation
             </button>
+          </div>
+
+          {/* Activity Log */}
+          <div style={{marginBottom:16,background:"#f5f4f0",border:"1px solid #e0dbd4",borderRadius:8,padding:"10px 14px"}}>
+            <div onClick={()=>setActivityLogOpen(o=>!o)} style={{display:"flex",alignItems:"center",cursor:"pointer",userSelect:"none",gap:8}}>
+              <span style={{fontSize:11,fontWeight:700,color:"#2d3752",fontFamily:"DM Sans,sans-serif",letterSpacing:0.4}}>ACTIVITY LOG</span>
+              <span style={{fontSize:11,color:"#5c6584",fontFamily:"DM Sans,sans-serif"}}>{allocActivityLog.length} entries</span>
+              {allocActivityLog.length>0&&<button onClick={e=>{e.stopPropagation();const updated=[];setAllocActivityLog(updated);try{localStorage.removeItem("allocActivityLog")}catch{}}} style={{marginLeft:"auto",background:"transparent",border:"none",fontSize:10,color:"#f87171",cursor:"pointer",fontFamily:"DM Sans,sans-serif",padding:"0 4px"}}>Clear</button>}
+              <span style={{fontSize:12,color:"#5c6584",marginLeft:allocActivityLog.length>0?"0":"auto",transform:activityLogOpen?"rotate(180deg)":"rotate(0deg)",transition:"transform 0.2s"}}>▾</span>
+            </div>
+            {activityLogOpen&&(
+              <div style={{marginTop:10,maxHeight:180,overflowY:"auto"}}>
+                {allocActivityLog.length===0
+                  ? <div style={{fontSize:11,color:"#5c6584",fontFamily:"DM Sans,sans-serif",padding:"4px 0"}}>No activity yet.</div>
+                  : allocActivityLog.map((e,i)=>(
+                    <div key={i} style={{display:"flex",gap:10,alignItems:"baseline",padding:"4px 0",borderBottom:"1px solid #e8e4de",fontSize:11,fontFamily:"DM Sans,sans-serif"}}>
+                      <span style={{color:"#5c6584",whiteSpace:"nowrap",flexShrink:0}}>{e.ts}</span>
+                      <span style={{color:e.action.includes("Upload")?"#7c3aed":"#0f766e",fontWeight:700,whiteSpace:"nowrap",flexShrink:0}}>{e.action}</span>
+                      <span style={{color:"#2d3752",wordBreak:"break-all"}}>{e.label}</span>
+                    </div>
+                  ))
+                }
+              </div>
+            )}
           </div>
 
           {/* Legend */}
