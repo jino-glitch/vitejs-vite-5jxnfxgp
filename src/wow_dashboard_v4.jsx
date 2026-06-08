@@ -225,7 +225,7 @@ const ALLOC_CATEGORIES = [
 
 export default function App() {
   // ── PASSWORD GATE ─────────────────────────────────────────────────────────
-  const CORRECT_PASSWORD = "Sprouts2026!";
+  const CORRECT_PASSWORD = "Sprouts2026@";
   const [authenticated, setAuthenticated] = useState(false);
   const [pwInput, setPwInput] = useState("");
   const [pwError, setPwError] = useState(false);
