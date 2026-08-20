@@ -1634,7 +1634,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
         <button style={{...tabS(tab==="sku"),background:tab==="sku"?"#0f766e":"transparent",border:tab==="sku"?"1px solid #0f766e":"1px solid transparent",color:tab==="sku"?"#fff":"#2d3752"}} onClick={()=>setTab("sku")}>Allocations (In&Out)</button>
       </div>
 
-      <div style={{padding:isMobile?"12px 12px":"24px 28px"}}>
+      <div style={{padding:isMobile?"12px 12px":"24px 14px"}}>
       {tab==="wow"&&(
         <div>
           <div style={{fontSize:13,color:"#2d3752",marginBottom:16}}>
@@ -2641,9 +2641,9 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                       rowIdx++;
                       rows.push(
                         <tr key={dc+"-"+r.store+"-"+(r.catKey||"")} style={{background:bg}}>
-                          <td style={{padding:cellP,fontSize:isMobile?10:11,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif",borderBottom:"1px solid #d8d3c9"}}>
+                          <td style={{padding:cellP,fontSize:isMobile?10:11,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif",borderBottom:"1px solid #d8d3c9",maxWidth:isMobile?96:150,whiteSpace:"nowrap"}}>
                             <div style={{fontWeight:600}}>{"#"+r.store}</div>
-                            <div style={{fontSize:11,color:"#3a5a7a",marginTop:2}}>{STORE_META[r.store]?.name||""}</div>
+                            <div title={STORE_META[r.store]?.name||""} style={{fontSize:11,color:"#3a5a7a",marginTop:2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",maxWidth:isMobile?96:150}}>{STORE_META[r.store]?.name||""}</div>
                           </td>
                           <td style={{padding:cellP,fontSize:isMobile?9:10,color:"#2d3752",fontFamily:"DM Sans,sans-serif",borderBottom:"1px solid #d8d3c9",whiteSpace:"nowrap"}}>{isMobile?dc.replace("DC","").replace("TXDC","TX").replace("CADC","CA").replace("CODC","CO").replace("FLDC","FL").replace("AZDC","AZ"):dc}</td>
                           {allocCategory.length>1&&<td style={{padding:cellP,fontSize:isMobile?9:10,color:"#a78bfa",fontFamily:"DM Sans,sans-serif",borderBottom:"1px solid #d8d3c9"}}>{r.catLabel||r.catKey||""}</td>}
@@ -2891,7 +2891,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
 
       {/* Allocations (In&Out) Tab */}
       {tab==="sku"&&(
-        <div style={{padding:isMobile?"12px 12px":"24px 28px"}}>
+        <div style={{padding:isMobile?"12px 12px":"24px 14px"}}>
           <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20,flexWrap:"wrap"}}>
             <div style={{width:4,height:24,background:"#0f766e",borderRadius:2}}/>
             <span style={{fontSize:16,fontWeight:700,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif",letterSpacing:0.3}}>ALLOCATIONS (IN&OUT)</span>
