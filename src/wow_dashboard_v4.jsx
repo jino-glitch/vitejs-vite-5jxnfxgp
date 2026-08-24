@@ -2884,9 +2884,9 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                             <div style={{fontSize:11,color:"#3a5a7a",marginTop:1}}>{STORE_META[r.store]?.name||""}</div>
                           </td>
                           <td style={{padding:"7px 12px",fontSize:13,color:"#a07030",fontFamily:"DM Sans,sans-serif",borderBottom:"1px solid #d8d3c9"}}>{r.product}</td>
-                          <td style={{padding:"7px 12px",textAlign:"right",fontSize:13,color:"#2d3752",fontFamily:"DM Sans,sans-serif",borderBottom:"1px solid #d8d3c9",textDecoration:"line-through"}}>{r.orig}</td>
-                          <td style={{padding:"7px 12px",textAlign:"right",fontSize:13,fontWeight:600,color:"#4ade80",fontFamily:"DM Sans,sans-serif",borderBottom:"1px solid #d8d3c9"}}>{r.corrected}</td>
-                          <td style={{padding:"7px 12px",textAlign:"right",fontSize:13,color:r.diff<0?"#f87171":"#4ade80",fontFamily:"DM Sans,sans-serif",borderBottom:"1px solid #d8d3c9"}}>{r.diff>0?"+"+r.diff:r.diff}</td>
+                          <td title={r.diff===0?"Export already matched the DC template \u2014 nothing changed":undefined} style={{padding:"7px 12px",textAlign:"right",fontSize:13,color:r.diff===0?"#8a8578":"#2d3752",fontFamily:"DM Sans,sans-serif",borderBottom:"1px solid #d8d3c9",textDecoration:r.diff===0?"none":"line-through"}}>{r.orig}</td>
+                          <td style={{padding:"7px 12px",textAlign:"right",fontSize:13,fontWeight:r.diff===0?400:600,color:r.diff===0?"#8a8578":"#4ade80",fontFamily:"DM Sans,sans-serif",borderBottom:"1px solid #d8d3c9"}}>{r.corrected}</td>
+                          <td title={r.diff===0?"match":undefined} style={{padding:"7px 12px",textAlign:"right",fontSize:13,color:r.diff===0?"#8a8578":(r.diff<0?"#f87171":"#4ade80"),fontFamily:"DM Sans,sans-serif",borderBottom:"1px solid #d8d3c9"}}>{r.diff===0?"\u2713":(r.diff>0?"+"+r.diff:r.diff)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -2895,7 +2895,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                         <td colSpan={4} style={{padding:"8px 12px",fontSize:13,color:"#f5a623",fontFamily:"DM Sans,sans-serif",fontWeight:700}}>
                           {filteredLog.length+" corrections · "+[...new Set(filteredLog.map(r=>r.dc))].length+" DCs · "+[...new Set(filteredLog.map(r=>r.store))].length+" stores"}
                         </td>
-                        <td style={{padding:"8px 12px",textAlign:"right",fontSize:13,color:"#2d3752",fontFamily:"DM Sans,sans-serif",fontWeight:700,textDecoration:"line-through"}}>{filteredLog.reduce((a,r)=>a+r.orig,0)}</td>
+                        <td style={{padding:"8px 12px",textAlign:"right",fontSize:13,color:"#2d3752",fontFamily:"DM Sans,sans-serif",fontWeight:700,textDecoration:(filteredLog.reduce((a,r)=>a+r.orig,0)===filteredLog.reduce((a,r)=>a+r.corrected,0))?"none":"line-through"}}>{filteredLog.reduce((a,r)=>a+r.orig,0)}</td>
                         <td style={{padding:"8px 12px",textAlign:"right",fontSize:13,color:"#4ade80",fontFamily:"DM Sans,sans-serif",fontWeight:700}}>{filteredLog.reduce((a,r)=>a+r.corrected,0)}</td>
                         <td style={{padding:"8px 12px",textAlign:"right",fontSize:13,color:"#f87171",fontFamily:"DM Sans,sans-serif",fontWeight:700}}>{filteredLog.reduce((a,r)=>a+r.diff,0)}</td>
                       </tr>
