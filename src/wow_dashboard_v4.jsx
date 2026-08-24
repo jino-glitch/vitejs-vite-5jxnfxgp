@@ -690,8 +690,13 @@ export default function App() {
       const [dc, store] = key.split("|");
       const dcFWs = dcCache[dc]||{};
 
-      // delivery weeks within baseline window (DC must have had outbound that week)
-      const deliveryWks = allocFWs.filter(fw=> dcFWs[fw]?.hasOut);
+      // delivery weeks within baseline window
+      // FIX: gate on MERGED receipts (STORE_OUTBOUND = export outbound + DC template),
+      // not leg-1 export only (dcFWs.hasOut). Template-only weeks (e.g. TRACYCADC FW34)
+      // were previously dropped, excluding their pieces from the ST% denominator.
+      const catOutForGate = STORE_OUTBOUND[catKey]||{};
+      const storeRcptWks = allocFWs.filter(fw=> (catOutForGate[store]?.[fw]?.[1]||0) > 0);
+      const deliveryWks = storeRcptWks.length>0 ? storeRcptWks : allocFWs.filter(fw=> dcFWs[fw]?.hasOut);
 
       if(deliveryWks.length < MIN_DELIVERY_WKS) {
         return {store,dc,catKey,catLabel:catDef.label,insuff:true,avgSales:null,avgST:null,piecesSold:0,piecesReceived:0,casesReceived:0,consecHigh:0,currentCases:null,recCases:null,status:"insuff",packSize:catDef.packSize||10};
@@ -2587,8 +2592,11 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
               const dcTotals = {};
               const dcSTPct = {};
               allocData.forEach(r=>{ if(!r.insuff && r.recCases!=null) { dcTotals[r.dc]=(dcTotals[r.dc]||0)+r.recCases; } });
-              allocData.forEach(r=>{ if(!r.insuff && r.piecesReceived>0) { if(!dcSTPct[r.dc]) dcSTPct[r.dc]={sum:0,n:0}; dcSTPct[r.dc].sum+=r.piecesSold/r.piecesReceived*100; dcSTPct[r.dc].n++; } });
-              const entries = allocDC.filter(dc=>dcTotals[dc]!=null).map(dc=>({dc,cases:dcTotals[dc],st:dcSTPct[dc]?dcSTPct[dc].sum/dcSTPct[dc].n:null}));
+              // FIX: pooled sell-through (total units / total pieces) instead of averaging
+              // per-store ratios — small-denominator stores (1 case received) previously
+              // read 120%+ and carried equal weight, inflating the DC figure.
+              allocData.forEach(r=>{ if(!r.insuff && r.piecesReceived>0) { if(!dcSTPct[r.dc]) dcSTPct[r.dc]={u:0,p:0}; dcSTPct[r.dc].u+=r.piecesSold; dcSTPct[r.dc].p+=r.piecesReceived; } });
+              const entries = allocDC.filter(dc=>dcTotals[dc]!=null).map(dc=>({dc,cases:dcTotals[dc],st:(dcSTPct[dc]&&dcSTPct[dc].p>0)?dcSTPct[dc].u/dcSTPct[dc].p*100:null}));
               if(entries.length===0) return null;
               return (
                 <div style={{padding:"10px 16px",borderBottom:"1px solid #d8d3c9",display:"flex",flexWrap:"wrap",gap:8,alignItems:"center"}}>
