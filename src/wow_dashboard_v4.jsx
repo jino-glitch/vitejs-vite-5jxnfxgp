@@ -739,7 +739,11 @@ export default function App() {
       const singleDelivery = deliveryWks.length < MIN_DELIVERY_WKS;
 
       if(piecesInWindow < MIN_PIECES) {
-        return {store,dc,catKey,catLabel:catDef.label,insuff:!emptyRun,avgSales:null,avgST:null,
+        // Restock rows render as normal rows (insuff:false), so they need real numbers —
+        // a null here reaches the table and throws on .toLocaleString().
+        const _wk = allocFWs.length||1;
+        const _avgSales = allocFWs.reduce((a,fw)=> a + ((storeDataIdx[fw+"|"+dc+"|"+store]||[0,0])[0]||0), 0) / _wk;
+        return {store,dc,catKey,catLabel:catDef.label,insuff:!emptyRun,avgSales:_avgSales,avgST:null,
                 piecesSold:0,piecesReceived:0,casesReceived:0,consecHigh:0,currentCases:null,
                 recCases: emptyRun?1:null, status: emptyRun?"floor":"insuff",
                 emptyRun, casesLast4, piecesInWindow, packSize:catDef.packSize||10};
@@ -2939,7 +2943,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                           </td>
                           <td style={{padding:cellP,fontSize:isMobile?9:10,color:"#2d3752",fontFamily:"DM Sans,sans-serif",borderBottom:"1px solid #d8d3c9",whiteSpace:"nowrap"}}>{isMobile?dc.replace("DC","").replace("TXDC","TX").replace("CADC","CA").replace("CODC","CO").replace("FLDC","FL").replace("AZDC","AZ"):dc}</td>
                           {allocCategory.length>1&&<td style={{padding:cellP,fontSize:isMobile?9:10,color:"#a78bfa",fontFamily:"DM Sans,sans-serif",borderBottom:"1px solid #d8d3c9"}}>{r.catLabel||r.catKey||""}</td>}
-                          <td style={{padding:cellP,textAlign:"right",fontSize:isMobile?10:11,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif",borderBottom:"1px solid #d8d3c9"}}>{isInsuff?"—":"$"+r.avgSales.toLocaleString("en-US",{minimumFractionDigits:0,maximumFractionDigits:0})}</td>
+                          <td style={{padding:cellP,textAlign:"right",fontSize:isMobile?10:11,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif",borderBottom:"1px solid #d8d3c9"}}>{(isInsuff||r.avgSales==null)?"—":"$"+r.avgSales.toLocaleString("en-US",{minimumFractionDigits:0,maximumFractionDigits:0})}</td>
                           {!isMobile&&<td style={{padding:cellP,textAlign:"right",borderBottom:"1px solid #d8d3c9"}}>
                             <div style={{fontSize:14,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif",fontWeight:600}}>{isInsuff?"—":r.piecesReceived>0?r.piecesSold.toLocaleString():"—"}</div>
                             <div style={{fontSize:11,color:"#2d3752",fontFamily:"DM Sans,sans-serif",marginTop:1}}>est.</div>
