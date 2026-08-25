@@ -322,7 +322,18 @@ export default function App() {
   // over every rule INCLUDING pallet balance — applied last in allocView.
   const [caseOverride, setCaseOverride] = useState({});
   const [editingCell, setEditingCell] = useState(null);   // key currently being edited
+  const [ovRestored, setOvRestored] = useState(0);        // count restored from last session
   const ovKey = (r) => r.dc+"|"+r.store+"|"+r.catKey;
+  const OV_STORAGE = "spr_alloc_overrides_v1";
+  // Overrides are stamped with the delivery week (Monday of the inbound date). They are
+  // only restored for the SAME week — otherwise last week's manual numbers would silently
+  // apply to a new order, which is worse than losing them.
+  const ovWeekKey = (ymd) => {
+    if(!/^\d{8}$/.test(String(ymd||""))) return "";
+    const d = new Date(+String(ymd).slice(0,4), +String(ymd).slice(4,6)-1, +String(ymd).slice(6,8));
+    const off = (d.getDay()+6)%7; d.setDate(d.getDate()-off);
+    return ""+d.getFullYear()+String(d.getMonth()+1).padStart(2,"0")+String(d.getDate()).padStart(2,"0");
+  };
   const [allocSearch, setAllocSearch] = useState("");
   const [districtSort, setDistrictSort] = useState("s26");
   const [expandedDistrict, setExpandedDistrict] = useState(null);
@@ -340,6 +351,30 @@ export default function App() {
     const tue = new Date(today); tue.setDate(today.getDate() + daysToTue);
     return String(tue.getFullYear()) + String(tue.getMonth()+1).padStart(2,'0') + String(tue.getDate()).padStart(2,'0');
   });
+
+  // ── Manual override persistence (localStorage, scoped to the delivery week) ──
+  React.useEffect(()=>{
+    try{
+      const raw = localStorage.getItem(OV_STORAGE);
+      if(!raw) return;
+      const saved = JSON.parse(raw);
+      if(!saved || typeof saved!=="object" || !saved.data) return;
+      if(saved.week && saved.week === ovWeekKey(exportDate)){
+        const n = Object.keys(saved.data).length;
+        if(n){ setCaseOverride(saved.data); setOvRestored(n); }
+      } else {
+        localStorage.removeItem(OV_STORAGE);   // different week — start clean
+      }
+    }catch(e){ /* storage unavailable or corrupt — ignore */ }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[]);
+
+  React.useEffect(()=>{
+    try{
+      if(Object.keys(caseOverride).length===0){ localStorage.removeItem(OV_STORAGE); return; }
+      localStorage.setItem(OV_STORAGE, JSON.stringify({week: ovWeekKey(exportDate), data: caseOverride}));
+    }catch(e){ /* ignore */ }
+  },[caseOverride, exportDate]);
 
   // Seed Allocations tab with embedded floral mix data (no upload required)
   React.useEffect(()=>{
@@ -3084,7 +3119,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                     {"Total: "+entries.reduce((a,e)=>a+e.cases,0)+" cases"}
                     {Object.keys(caseOverride).length>0 && (
                       <span style={{display:"block",fontSize:11,fontWeight:400,color:"#2563eb",fontFamily:"DM Sans,sans-serif",marginTop:2}}>
-                        {"\u270f\ufe0f "+Object.keys(caseOverride).length+" manual override"+(Object.keys(caseOverride).length===1?"":"s")+" applied"}
+                        {"\u270f\ufe0f "+Object.keys(caseOverride).length+" manual override"+(Object.keys(caseOverride).length===1?"":"s")+" applied"+(ovRestored?"  \u00b7 "+ovRestored+" restored from your last session":"")}
                         <span onClick={()=>setCaseOverride({})} title="Clear every manual override"
                           style={{cursor:"pointer",color:"#a07030",marginLeft:6,textDecoration:"underline"}}>clear all</span>
                       </span>
