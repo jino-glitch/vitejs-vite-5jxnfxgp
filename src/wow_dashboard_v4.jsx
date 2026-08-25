@@ -943,6 +943,11 @@ export default function App() {
   const PALLET = {"3inch":32, "5inch":18, "fused":18, "cascades":18};
   // pallets = max(1, round-half-UP(cases / palletSize)); never drop below one pallet
   // once a DC has earned anything. Verified against: 40->36, 12->18, 8->18.
+  // Store sell-through used for balance ordering. The row exposes piecesSold /
+  // piecesReceived — NOT storeST/avgSTUsed (those never existed, so the old sort key
+  // evaluated to -1 for every store and removals ran in store-number order, stripping
+  // cases from the FIRST stores in the list instead of the weakest ones).
+  const rowST = (r) => (r && r.piecesReceived>0) ? (r.piecesSold/r.piecesReceived*100) : -1;
   const balanceCases = (cases, pal) => {
     if(!pal || cases<=0) return cases;
     return Math.max(1, Math.floor(cases/pal + 0.5)) * pal;
@@ -966,14 +971,15 @@ export default function App() {
       const target = (ov!=null && ov>=0) ? ov*pal : balanceCases(total, pal);
       let delta = target - total;
       if(delta === 0) return;
+      const _tagBal = (r)=>{ if((r.recCases||0)===0 && r.status!=="skip" && r.status!=="discounted" && r.status!=="insuff") r.status="balanced-out"; };
       if(delta < 0){
         // REMOVE from the lowest ST% first, one case at a time.
         const order = grp.filter(r=>(r.recCases||0)>0 && !r.isNewStore)
-                         .sort((a,b)=>(a.avgSTUsed??a.storeST??-1)-(b.avgSTUsed??b.storeST??-1));
+                         .sort((a,b)=>rowST(a)-rowST(b));   // weakest sell-through first
         let i=0, guard=0;
         while(delta<0 && guard++ < 100000){
           const r = order[i % order.length];
-          if((r.recCases||0)>0){ r.recCases--; delta++; r.balAdj=(r.balAdj||0)-1; }
+          if((r.recCases||0)>0){ r.recCases--; delta++; r.balAdj=(r.balAdj||0)-1; _tagBal(r); }
           i++;
           if(order.every(x=>(x.recCases||0)===0)) break;
         }
@@ -982,7 +988,7 @@ export default function App() {
         // category cap; only if every eligible store is capped do we exceed it.
         const cap = (ALLOC_CATEGORIES.find(c=>c.key===grp[0].catKey)||{}).maxCases || 1;
         const rank = grp.filter(r=>r.status!=="discounted")
-                        .sort((a,b)=>(b.storeST??-1)-(a.storeST??-1));
+                        .sort((a,b)=>rowST(b)-rowST(a));   // strongest sell-through first
         let i=0, guard=0;
         while(delta>0 && rank.length && guard++ < 100000){
           const r = rank[i % rank.length];
@@ -1842,6 +1848,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
       {
         const fmtPct = v => (v==null || isNaN(v)) ? "" : Math.round(v*10)/10;
         const statusLabel = r => r.insuff ? "Insufficient Data"
+          : r.status==="balanced-out" ? "Trimmed by pallet balance"
           : r.status==="newstore" ? "New Store — opening week"
           : r.status==="floor" ? "Restock — empty 4 wks"
           : r.status==="discounted" ? "Discounted — excluded"
@@ -3109,9 +3116,9 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
 
                     dcRows.forEach(r=>{
                       const isInsuff = r.insuff;
-                      const statusIcon = isInsuff?"🚩":r.status==="newstore"?"🆕":r.status==="floor"?"📦":r.status==="discounted"?"🏷️":r.status==="skip"?"🔴":r.status==="high"?"🔵":r.status==="trending"?"🌀":r.status==="watch"?"🟡":"🟢";
-                      const statusLabel = isInsuff?"Insufficient Data":r.status==="newstore"?"New Store — opening week":r.status==="floor"?"Restock — empty 4 wks":r.status==="discounted"?"Discounted — excluded":r.status==="skip"?"Skip":r.status==="high"?"High Performer":r.status==="trending"?"Trending":r.status==="watch"?"Watch":"Standard";
-                      const statusColor = isInsuff?"#6b7280":r.status==="newstore"?"#7c3aed":r.status==="floor"?"#0ea5e9":r.status==="discounted"?"#c026d3":r.status==="skip"?"#f87171":r.status==="high"?"#60d9fa":r.status==="trending"?"#a3e635":r.status==="watch"?"#f5a623":"#4ade80";
+                      const statusIcon = isInsuff?"🚩":r.status==="balanced-out"?"⚖️":r.status==="newstore"?"🆕":r.status==="floor"?"📦":r.status==="discounted"?"🏷️":r.status==="skip"?"🔴":r.status==="high"?"🔵":r.status==="trending"?"🌀":r.status==="watch"?"🟡":"🟢";
+                      const statusLabel = isInsuff?"Insufficient Data":r.status==="balanced-out"?"Trimmed by pallet balance":r.status==="newstore"?"New Store — opening week":r.status==="floor"?"Restock — empty 4 wks":r.status==="discounted"?"Discounted — excluded":r.status==="skip"?"Skip":r.status==="high"?"High Performer":r.status==="trending"?"Trending":r.status==="watch"?"Watch":"Standard";
+                      const statusColor = isInsuff?"#6b7280":r.status==="balanced-out"?"#8a8578":r.status==="newstore"?"#7c3aed":r.status==="floor"?"#0ea5e9":r.status==="discounted"?"#c026d3":r.status==="skip"?"#f87171":r.status==="high"?"#60d9fa":r.status==="trending"?"#a3e635":r.status==="watch"?"#f5a623":"#4ade80";
                       const bg = r.isNewStore ? "#f3ebff" : (rowIdx%2===0?"#ffffff":"#f5f4f0");
                       const cellP = isMobile?"6px 8px":"8px 6px";
                       rowIdx++;
@@ -3165,7 +3172,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                           {!isMobile&&<td style={{padding:cellP,textAlign:"right",fontSize:14,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif",borderBottom:"1px solid #d8d3c9"}}>{isInsuff||r.consecHigh===0?"—":r.consecHigh}</td>}
                           {!isMobile&&<td style={{padding:cellP,textAlign:"right",fontSize:14,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif",borderBottom:"1px solid #d8d3c9"}}>{isInsuff?"—":r.currentCases}</td>}
                           <td style={{padding:cellP,textAlign:"right",fontSize:isMobile?12:13,fontWeight:700,color:isInsuff?"#3a5a7a":statusColor,fontFamily:"DM Sans,sans-serif",borderBottom:"1px solid #d8d3c9"}}>{isInsuff?"—":r.recCases}</td>
-                          <td style={{padding:cellP,fontSize:isMobile?9:10,color:statusColor,fontFamily:"DM Sans,sans-serif",borderBottom:"1px solid #d8d3c9",whiteSpace:"nowrap"}}>{statusIcon+" "+(isMobile?(isInsuff?"Insuff.":r.status==="newstore"?"New":r.status==="floor"?"Restock":r.status==="discounted"?"Disc.":r.status==="skip"?"Skip":r.status==="high"?"High":r.status==="trending"?"Trending":r.status==="watch"?"Watch":"Std"):statusLabel)}</td>
+                          <td style={{padding:cellP,fontSize:isMobile?9:10,color:statusColor,fontFamily:"DM Sans,sans-serif",borderBottom:"1px solid #d8d3c9",whiteSpace:"nowrap"}}>{statusIcon+" "+(isMobile?(isInsuff?"Insuff.":r.status==="balanced-out"?"Trimmed":r.status==="newstore"?"New":r.status==="floor"?"Restock":r.status==="discounted"?"Disc.":r.status==="skip"?"Skip":r.status==="high"?"High":r.status==="trending"?"Trending":r.status==="watch"?"Watch":"Std"):statusLabel)}</td>
                         </tr>
                       );
                     });
