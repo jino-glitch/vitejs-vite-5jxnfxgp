@@ -717,8 +717,22 @@ export default function App() {
       const storeRcptWks = allocFWs.filter(fw=> (catOutForGate[store]?.[fw]?.[1]||0) > 0);
       const deliveryWks = storeRcptWks.length>0 ? storeRcptWks : allocFWs.filter(fw=> dcFWs[fw]?.hasOut);
 
+      // ── Minimum service floor ──────────────────────────────────────────────
+      // No store is ever permanently excluded. If a store has received NOTHING in the
+      // trailing 4 fiscal weeks it gets 1 case, regardless of Skip / Discounted /
+      // Insufficient. This is deliberately based on the LAST 4 WEEKS OF DATA, not the
+      // selected baseline — otherwise an 8-week or YTD baseline would mask a store that
+      // has been empty recently. It overrides the discount exclusion by design: a store
+      // with no product cannot sell, and cannot prove it can.
+      const FLOOR_WKS = ALL_FWS_FULL.slice(-4).map(String);
+      const casesLast4 = FLOOR_WKS.reduce((a,fw)=> a + ((catOutForGate[store]?.[fw]?.[0])||0), 0);
+      const emptyRun = casesLast4 === 0;
+
       if(deliveryWks.length < MIN_DELIVERY_WKS) {
-        return {store,dc,catKey,catLabel:catDef.label,insuff:true,avgSales:null,avgST:null,piecesSold:0,piecesReceived:0,casesReceived:0,consecHigh:0,currentCases:null,recCases:null,status:"insuff",packSize:catDef.packSize||10};
+        return {store,dc,catKey,catLabel:catDef.label,insuff:!emptyRun,avgSales:null,avgST:null,
+                piecesSold:0,piecesReceived:0,casesReceived:0,consecHigh:0,currentCases:null,
+                recCases: emptyRun?1:null, status: emptyRun?"floor":"insuff",
+                emptyRun, casesLast4, packSize:catDef.packSize||10};
       }
 
       // Avg wkly sales = this store's own sales on delivery weeks
@@ -849,9 +863,12 @@ export default function App() {
       // Discount filter — keep the pre-filter value so the UI can show before/after.
       const recCasesPreDisc = recCases, statusPreDisc = status;
       if(discExcluded) { recCases=0; status="discounted"; }
+      // Service floor wins over everything above, including the discount exclusion.
+      if(emptyRun && (recCases||0) < 1) { recCases = 1; status = "floor"; }
 
       return {store,dc,catKey,catLabel:catDef.label,insuff:false,avgSales,avgST,piecesSold:unitsSold,piecesReceived,casesReceived,consecHigh,currentCases,recCases,status,packSize,isTrending,isHighVol,
-              discMax,discWks,discStreak,discRun,belowCost,discActive,discChronic,discLifted,discExcluded,recCasesPreDisc,statusPreDisc};
+              discMax,discWks,discStreak,discRun,belowCost,discActive,discChronic,discLifted,discExcluded,recCasesPreDisc,statusPreDisc,
+              emptyRun,casesLast4};
     }).filter(r=>allocDC.includes(r.dc))
       .sort((a,b)=>a.dc===b.dc?Number(a.store)-Number(b.store):a.dc.localeCompare(b.dc));
     allResults.push(...catRows);
@@ -1684,6 +1701,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
       {
         const fmtPct = v => (v==null || isNaN(v)) ? "" : Math.round(v*10)/10;
         const statusLabel = r => r.insuff ? "Insufficient Data"
+          : r.status==="floor" ? "Restock — empty 4 wks"
           : r.status==="discounted" ? "Discounted — excluded"
           : r.status==="skip" ? "Skip"
           : r.status==="high" ? "High Performer"
@@ -2769,7 +2787,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
 
           {/* Legend */}
           <div style={{display:"flex",gap:isMobile?8:16,marginBottom:16,flexWrap:"wrap"}}>
-            {[["🚩","#6b7280","Insufficient Data"],["🔴","#f87171","Skip (0 cases)"],["🟢","#4ade80","Standard (+1)"],["🟡","#f5a623",isMobile?"Watch (+1)":"Watch (+1, approaching high)"],["🌀","#a3e635",isMobile?"Trending (+2)":"Trending (+2, 2 of 3 wks high)"],["🔵","#60d9fa","High Performer (+2)"]].map(([icon,color,label])=>(
+            {[["🚩","#6b7280","Insufficient Data"],["🔴","#f87171","Skip (0 cases)"],["🟢","#4ade80","Standard (+1)"],["🟡","#f5a623",isMobile?"Watch (+1)":"Watch (+1, approaching high)"],["🌀","#a3e635",isMobile?"Trending (+2)":"Trending (+2, 2 of 3 wks high)"],["🔵","#60d9fa","High Performer (+2)"],["📦","#0ea5e9",isMobile?"Restock (+1)":"Restock (+1, empty 4 wks)"]].map(([icon,color,label])=>(
               <div key={label} style={{display:"flex",alignItems:"center",gap:4}}>
                 <span style={{fontSize:13}}>{icon}</span>
                 <span style={{fontSize:12,color,fontFamily:"DM Sans,sans-serif"}}>{label}</span>
@@ -2893,9 +2911,9 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
 
                     dcRows.forEach(r=>{
                       const isInsuff = r.insuff;
-                      const statusIcon = isInsuff?"🚩":r.status==="discounted"?"🏷️":r.status==="skip"?"🔴":r.status==="high"?"🔵":r.status==="trending"?"🌀":r.status==="watch"?"🟡":"🟢";
-                      const statusLabel = isInsuff?"Insufficient Data":r.status==="discounted"?"Discounted — excluded":r.status==="skip"?"Skip":r.status==="high"?"High Performer":r.status==="trending"?"Trending":r.status==="watch"?"Watch":"Standard";
-                      const statusColor = isInsuff?"#6b7280":r.status==="discounted"?"#c026d3":r.status==="skip"?"#f87171":r.status==="high"?"#60d9fa":r.status==="trending"?"#a3e635":r.status==="watch"?"#f5a623":"#4ade80";
+                      const statusIcon = isInsuff?"🚩":r.status==="floor"?"📦":r.status==="discounted"?"🏷️":r.status==="skip"?"🔴":r.status==="high"?"🔵":r.status==="trending"?"🌀":r.status==="watch"?"🟡":"🟢";
+                      const statusLabel = isInsuff?"Insufficient Data":r.status==="floor"?"Restock — empty 4 wks":r.status==="discounted"?"Discounted — excluded":r.status==="skip"?"Skip":r.status==="high"?"High Performer":r.status==="trending"?"Trending":r.status==="watch"?"Watch":"Standard";
+                      const statusColor = isInsuff?"#6b7280":r.status==="floor"?"#0ea5e9":r.status==="discounted"?"#c026d3":r.status==="skip"?"#f87171":r.status==="high"?"#60d9fa":r.status==="trending"?"#a3e635":r.status==="watch"?"#f5a623":"#4ade80";
                       const bg = rowIdx%2===0?"#ffffff":"#f5f4f0";
                       const cellP = isMobile?"6px 8px":"8px 8px";
                       rowIdx++;
@@ -2949,7 +2967,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                           {!isMobile&&<td style={{padding:cellP,textAlign:"right",fontSize:14,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif",borderBottom:"1px solid #d8d3c9"}}>{isInsuff||r.consecHigh===0?"—":r.consecHigh}</td>}
                           {!isMobile&&<td style={{padding:cellP,textAlign:"right",fontSize:14,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif",borderBottom:"1px solid #d8d3c9"}}>{isInsuff?"—":r.currentCases}</td>}
                           <td style={{padding:cellP,textAlign:"right",fontSize:isMobile?12:13,fontWeight:700,color:isInsuff?"#3a5a7a":statusColor,fontFamily:"DM Sans,sans-serif",borderBottom:"1px solid #d8d3c9"}}>{isInsuff?"—":r.recCases}</td>
-                          <td style={{padding:cellP,fontSize:isMobile?9:10,color:statusColor,fontFamily:"DM Sans,sans-serif",borderBottom:"1px solid #d8d3c9",whiteSpace:"nowrap"}}>{statusIcon+" "+(isMobile?(isInsuff?"Insuff.":r.status==="discounted"?"Disc.":r.status==="skip"?"Skip":r.status==="high"?"High":r.status==="trending"?"Trending":r.status==="watch"?"Watch":"Std"):statusLabel)}</td>
+                          <td style={{padding:cellP,fontSize:isMobile?9:10,color:statusColor,fontFamily:"DM Sans,sans-serif",borderBottom:"1px solid #d8d3c9",whiteSpace:"nowrap"}}>{statusIcon+" "+(isMobile?(isInsuff?"Insuff.":r.status==="floor"?"Restock":r.status==="discounted"?"Disc.":r.status==="skip"?"Skip":r.status==="high"?"High":r.status==="trending"?"Trending":r.status==="watch"?"Watch":"Std"):statusLabel)}</td>
                         </tr>
                       );
                     });
