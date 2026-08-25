@@ -2857,6 +2857,53 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
             )}
           </div>
 
+          {/* Upcoming store openings — visible ahead of time, not just on the matching week */}
+          {(()=>{
+            const weekStart = (dt) => { const x=new Date(dt); const off=(x.getDay()+6)%7; x.setDate(x.getDate()-off); x.setHours(0,0,0,0); return x.getTime(); };
+            const ds = String(exportDate||"").trim();
+            const inb = /^\d{8}$/.test(ds) ? new Date(+ds.slice(0,4), +ds.slice(4,6)-1, +ds.slice(6,8)) : null;
+            const anchor = (inb && !isNaN(inb)) ? inb : new Date();
+            const upcoming = Object.entries(NEW_STORE_OPENINGS)
+              .map(([store,info])=>({store, ...info, d:new Date(info.open+"T00:00:00")}))
+              .filter(x=>!isNaN(x.d) && x.d >= new Date(anchor.getFullYear(),anchor.getMonth(),anchor.getDate()-7))
+              .sort((a,b)=>a.d-b.d).slice(0,10);
+            if(!upcoming.length) return null;
+            const thisWeek = (inb && !isNaN(inb)) ? weekStart(inb) : null;
+            const byDate = {};
+            upcoming.forEach(x=>{ (byDate[x.open]=byDate[x.open]||[]).push(x); });
+            return (
+              <div style={{marginBottom:12,background:"#f6f2ff",border:"1px solid #d9c9f5",borderRadius:8,padding:"9px 12px"}}>
+                <div style={{display:"flex",alignItems:"baseline",gap:8,flexWrap:"wrap"}}>
+                  <span style={{fontSize:11,fontWeight:700,color:"#5b21b6",fontFamily:"DM Sans,sans-serif",letterSpacing:0.4}}>🆕 UPCOMING STORE OPENINGS</span>
+                  <span style={{fontSize:11,color:"#6b5a8a",fontFamily:"DM Sans,sans-serif"}}>
+                    each gets 2 cases of 5&quot; in its opening week — set INBOUND DATE to that week to include them
+                  </span>
+                </div>
+                <div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:7}}>
+                  {Object.entries(byDate).map(([date,list])=>{
+                    const isNow = thisWeek!==null && weekStart(new Date(date+"T00:00:00"))===thisWeek;
+                    return (
+                      <div key={date} title={list.map(x=>"#"+x.store+" "+x.name+" ("+x.dc+")").join("\n")}
+                        style={{border:isNow?"2px solid #7c3aed":"1px solid #d9c9f5",background:isNow?"#7c3aed":"#ffffff",
+                                borderRadius:6,padding:"5px 9px",minWidth:96}}>
+                        <div style={{fontSize:10,fontWeight:700,color:isNow?"#ffffff":"#5b21b6",fontFamily:"DM Sans,sans-serif"}}>
+                          {new Date(date+"T00:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric"})}
+                          {isNow?"  ▸ THIS WEEK":""}
+                        </div>
+                        <div style={{fontSize:11,color:isNow?"#ede9fe":"#2d3752",fontFamily:"DM Sans,sans-serif",marginTop:2,whiteSpace:"nowrap"}}>
+                          {list.map(x=>"#"+x.store).join(", ")}
+                        </div>
+                        <div style={{fontSize:9.5,color:isNow?"#d8ccf7":"#8a8578",fontFamily:"DM Sans,sans-serif",marginTop:1,whiteSpace:"nowrap"}}>
+                          {[...new Set(list.map(x=>x.dc.replace("DC","")))].join(" · ")}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
+
           {/* Legend */}
           <div style={{display:"flex",gap:isMobile?8:16,marginBottom:16,flexWrap:"wrap"}}>
             {[["🚩","#6b7280","Insufficient Data"],["🔴","#f87171","Skip (0 cases)"],["🟢","#4ade80","Standard (+1)"],["🟡","#f5a623",isMobile?"Watch (+1)":"Watch (+1, approaching high)"],["🌀","#a3e635",isMobile?"Trending (+2)":"Trending (+2, 2 of 3 wks high)"],["🔵","#60d9fa","High Performer (+2)"],["📦","#0ea5e9",isMobile?"Restock (+1)":"Restock (+1, empty 4 wks)"],["🆕","#7c3aed",isMobile?"New Store (+2)":"New Store (+2, opening week)"]].map(([icon,color,label])=>(
@@ -2986,7 +3033,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                       const statusIcon = isInsuff?"🚩":r.status==="newstore"?"🆕":r.status==="floor"?"📦":r.status==="discounted"?"🏷️":r.status==="skip"?"🔴":r.status==="high"?"🔵":r.status==="trending"?"🌀":r.status==="watch"?"🟡":"🟢";
                       const statusLabel = isInsuff?"Insufficient Data":r.status==="newstore"?"New Store — opening week":r.status==="floor"?"Restock — empty 4 wks":r.status==="discounted"?"Discounted — excluded":r.status==="skip"?"Skip":r.status==="high"?"High Performer":r.status==="trending"?"Trending":r.status==="watch"?"Watch":"Standard";
                       const statusColor = isInsuff?"#6b7280":r.status==="newstore"?"#7c3aed":r.status==="floor"?"#0ea5e9":r.status==="discounted"?"#c026d3":r.status==="skip"?"#f87171":r.status==="high"?"#60d9fa":r.status==="trending"?"#a3e635":r.status==="watch"?"#f5a623":"#4ade80";
-                      const bg = rowIdx%2===0?"#ffffff":"#f5f4f0";
+                      const bg = r.isNewStore ? "#f3ebff" : (rowIdx%2===0?"#ffffff":"#f5f4f0");
                       const cellP = isMobile?"6px 8px":"8px 6px";
                       rowIdx++;
                       rows.push(
