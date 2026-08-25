@@ -318,6 +318,11 @@ export default function App() {
   // Absent = use the computed default (nearest pallet, min 1). DCs differ in
   // storage space, so each one can be nudged up or down independently.
   const [palletOverride, setPalletOverride] = useState({});
+  // Manual per-store case override, keyed "DC|store|catKey". The buyer's number wins
+  // over every rule INCLUDING pallet balance — applied last in allocView.
+  const [caseOverride, setCaseOverride] = useState({});
+  const [editingCell, setEditingCell] = useState(null);   // key currently being edited
+  const ovKey = (r) => r.dc+"|"+r.store+"|"+r.catKey;
   const [allocSearch, setAllocSearch] = useState("");
   const [districtSort, setDistrictSort] = useState("s26");
   const [expandedDistrict, setExpandedDistrict] = useState(null);
@@ -953,7 +958,16 @@ export default function App() {
     return Math.max(1, Math.floor(cases/pal + 0.5)) * pal;
   };
   const allocView = useMemo(()=>{
-    if(!allocBalance) return allocData;
+    const applyOverrides = (rows) => rows.map(r=>{
+      const k = r.dc+"|"+r.store+"|"+r.catKey;
+      if(!(k in caseOverride)) return r;
+      const v = caseOverride[k];
+      return {...r, recCasesPreOverride: r.recCases, recCases: v,
+              status: (v>0 && (r.insuff||r.status==="skip"||r.status==="discounted"||r.status==="balanced-out")) ? "manual" : (v===0 ? "manual" : r.status),
+              isOverridden:true, insuff: v>0 ? false : r.insuff,
+              avgSales: r.avgSales==null ? 0 : r.avgSales};
+    });
+    if(!allocBalance) return applyOverrides(allocData);
     const rows = allocData.map(r=>({...r, recCasesPreBal: r.recCases}));
     const groups = {};
     rows.forEach(r=>{
@@ -974,7 +988,7 @@ export default function App() {
       const _tagBal = (r)=>{ if((r.recCases||0)===0 && r.status!=="skip" && r.status!=="discounted" && r.status!=="insuff") r.status="balanced-out"; };
       if(delta < 0){
         // REMOVE from the lowest ST% first, one case at a time.
-        const order = grp.filter(r=>(r.recCases||0)>0 && !r.isNewStore)
+        const order = grp.filter(r=>(r.recCases||0)>0 && !r.isNewStore && !((r.dc+"|"+r.store+"|"+r.catKey) in caseOverride))
                          .sort((a,b)=>rowST(a)-rowST(b));   // weakest sell-through first
         let i=0, guard=0;
         while(delta<0 && guard++ < 100000){
@@ -1000,8 +1014,8 @@ export default function App() {
         }
       }
     });
-    return rows;
-  },[allocData,allocBalance,palletOverride]);
+    return applyOverrides(rows);
+  },[allocData,allocBalance,palletOverride,caseOverride]);
 
   // ── DISTRICT COMPARISON ──────────────────────────────────────────────────────
   const districtData = useMemo(()=>{
@@ -1848,6 +1862,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
       {
         const fmtPct = v => (v==null || isNaN(v)) ? "" : Math.round(v*10)/10;
         const statusLabel = r => r.insuff ? "Insufficient Data"
+          : r.status==="manual" ? "Manual override"
           : r.status==="balanced-out" ? "Trimmed by pallet balance"
           : r.status==="newstore" ? "New Store — opening week"
           : r.status==="floor" ? "Restock — empty 4 wks"
@@ -3067,6 +3082,13 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                   );})}
                   <span style={{marginLeft:"auto",fontSize:13,fontFamily:"DM Sans,sans-serif",color:"#7c3aed",fontWeight:700}}>
                     {"Total: "+entries.reduce((a,e)=>a+e.cases,0)+" cases"}
+                    {Object.keys(caseOverride).length>0 && (
+                      <span style={{display:"block",fontSize:11,fontWeight:400,color:"#2563eb",fontFamily:"DM Sans,sans-serif",marginTop:2}}>
+                        {"\u270f\ufe0f "+Object.keys(caseOverride).length+" manual override"+(Object.keys(caseOverride).length===1?"":"s")+" applied"}
+                        <span onClick={()=>setCaseOverride({})} title="Clear every manual override"
+                          style={{cursor:"pointer",color:"#a07030",marginLeft:6,textDecoration:"underline"}}>clear all</span>
+                      </span>
+                    )}
                     {allocBalance && (()=>{
                       const preBal = allocView.reduce((a,r)=>a+(r.insuff?0:(r.recCasesPreBal!=null?r.recCasesPreBal:(r.recCases||0))),0);
                       const postBal = allocView.reduce((a,r)=>a+(r.insuff?0:(r.recCases||0)),0);
@@ -3116,9 +3138,9 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
 
                     dcRows.forEach(r=>{
                       const isInsuff = r.insuff;
-                      const statusIcon = isInsuff?"🚩":r.status==="balanced-out"?"⚖️":r.status==="newstore"?"🆕":r.status==="floor"?"📦":r.status==="discounted"?"🏷️":r.status==="skip"?"🔴":r.status==="high"?"🔵":r.status==="trending"?"🌀":r.status==="watch"?"🟡":"🟢";
-                      const statusLabel = isInsuff?"Insufficient Data":r.status==="balanced-out"?"Trimmed by pallet balance":r.status==="newstore"?"New Store — opening week":r.status==="floor"?"Restock — empty 4 wks":r.status==="discounted"?"Discounted — excluded":r.status==="skip"?"Skip":r.status==="high"?"High Performer":r.status==="trending"?"Trending":r.status==="watch"?"Watch":"Standard";
-                      const statusColor = isInsuff?"#6b7280":r.status==="balanced-out"?"#8a8578":r.status==="newstore"?"#7c3aed":r.status==="floor"?"#0ea5e9":r.status==="discounted"?"#c026d3":r.status==="skip"?"#f87171":r.status==="high"?"#60d9fa":r.status==="trending"?"#a3e635":r.status==="watch"?"#f5a623":"#4ade80";
+                      const statusIcon = isInsuff?"🚩":r.status==="manual"?"✏️":r.status==="balanced-out"?"⚖️":r.status==="newstore"?"🆕":r.status==="floor"?"📦":r.status==="discounted"?"🏷️":r.status==="skip"?"🔴":r.status==="high"?"🔵":r.status==="trending"?"🌀":r.status==="watch"?"🟡":"🟢";
+                      const statusLabel = isInsuff?"Insufficient Data":r.status==="manual"?"Manual override":r.status==="balanced-out"?"Trimmed by pallet balance":r.status==="newstore"?"New Store — opening week":r.status==="floor"?"Restock — empty 4 wks":r.status==="discounted"?"Discounted — excluded":r.status==="skip"?"Skip":r.status==="high"?"High Performer":r.status==="trending"?"Trending":r.status==="watch"?"Watch":"Standard";
+                      const statusColor = isInsuff?"#6b7280":r.status==="manual"?"#2563eb":r.status==="balanced-out"?"#8a8578":r.status==="newstore"?"#7c3aed":r.status==="floor"?"#0ea5e9":r.status==="discounted"?"#c026d3":r.status==="skip"?"#f87171":r.status==="high"?"#60d9fa":r.status==="trending"?"#a3e635":r.status==="watch"?"#f5a623":"#4ade80";
                       const bg = r.isNewStore ? "#f3ebff" : (rowIdx%2===0?"#ffffff":"#f5f4f0");
                       const cellP = isMobile?"6px 8px":"8px 6px";
                       rowIdx++;
@@ -3171,8 +3193,35 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                           })()}
                           {!isMobile&&<td style={{padding:cellP,textAlign:"right",fontSize:14,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif",borderBottom:"1px solid #d8d3c9"}}>{isInsuff||r.consecHigh===0?"—":r.consecHigh}</td>}
                           {!isMobile&&<td style={{padding:cellP,textAlign:"right",fontSize:14,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif",borderBottom:"1px solid #d8d3c9"}}>{isInsuff?"—":r.currentCases}</td>}
-                          <td style={{padding:cellP,textAlign:"right",fontSize:isMobile?12:13,fontWeight:700,color:isInsuff?"#3a5a7a":statusColor,fontFamily:"DM Sans,sans-serif",borderBottom:"1px solid #d8d3c9"}}>{isInsuff?"—":r.recCases}</td>
-                          <td style={{padding:cellP,fontSize:isMobile?9:10,color:statusColor,fontFamily:"DM Sans,sans-serif",borderBottom:"1px solid #d8d3c9",whiteSpace:"nowrap"}}>{statusIcon+" "+(isMobile?(isInsuff?"Insuff.":r.status==="balanced-out"?"Trimmed":r.status==="newstore"?"New":r.status==="floor"?"Restock":r.status==="discounted"?"Disc.":r.status==="skip"?"Skip":r.status==="high"?"High":r.status==="trending"?"Trending":r.status==="watch"?"Watch":"Std"):statusLabel)}</td>
+                          <td style={{padding:cellP,textAlign:"right",fontSize:isMobile?12:13,fontWeight:700,color:r.isOverridden?"#2563eb":(isInsuff?"#3a5a7a":statusColor),fontFamily:"DM Sans,sans-serif",borderBottom:"1px solid #d8d3c9",whiteSpace:"nowrap"}}>
+                            {(()=>{
+                              const k = ovKey(r);
+                              if(editingCell===k){
+                                return <input autoFocus type="number" min="0" defaultValue={r.recCases==null?0:r.recCases}
+                                  onBlur={e=>{ const v=parseInt(e.target.value,10);
+                                    setCaseOverride(o=>({...o,[k]: isNaN(v)||v<0?0:v})); setEditingCell(null); }}
+                                  onKeyDown={e=>{ if(e.key==="Enter") e.target.blur();
+                                    if(e.key==="Escape"){ setEditingCell(null); } }}
+                                  style={{width:46,fontSize:13,fontWeight:700,textAlign:"right",padding:"1px 3px",
+                                          border:"1px solid #2563eb",borderRadius:3,fontFamily:"DM Sans,sans-serif",outline:"none"}} />;
+                              }
+                              return (
+                                <span>
+                                  <span onClick={()=>setEditingCell(k)}
+                                    title={r.isOverridden ? ("Manual override — rule said "+(r.recCasesPreOverride==null?"—":r.recCasesPreOverride)+". Click to change.") : "Click to override this store's cases"}
+                                    style={{cursor:"pointer",borderBottom:"1px dashed "+(r.isOverridden?"#2563eb":"#c9c4ba"),padding:"0 1px"}}>
+                                    {isInsuff && !r.isOverridden ? "—" : r.recCases}
+                                  </span>
+                                  {r.isOverridden && (
+                                    <span onClick={()=>setCaseOverride(o=>{const n={...o}; delete n[k]; return n;})}
+                                      title="Reset to the rule-based value"
+                                      style={{cursor:"pointer",color:"#a07030",fontWeight:400,marginLeft:4,fontSize:11}}>↺</span>
+                                  )}
+                                </span>
+                              );
+                            })()}
+                          </td>
+                          <td style={{padding:cellP,fontSize:isMobile?9:10,color:statusColor,fontFamily:"DM Sans,sans-serif",borderBottom:"1px solid #d8d3c9",whiteSpace:"nowrap"}}>{statusIcon+" "+(isMobile?(isInsuff?"Insuff.":r.status==="manual"?"Manual":r.status==="balanced-out"?"Trimmed":r.status==="newstore"?"New":r.status==="floor"?"Restock":r.status==="discounted"?"Disc.":r.status==="skip"?"Skip":r.status==="high"?"High":r.status==="trending"?"Trending":r.status==="watch"?"Watch":"Std"):statusLabel)}</td>
                         </tr>
                       );
                     });
