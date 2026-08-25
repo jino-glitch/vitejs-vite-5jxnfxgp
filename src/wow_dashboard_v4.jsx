@@ -1705,6 +1705,11 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
       const cData=(rgb)=>({fill:fill(rgb),font:{sz:10,name:"Calibri"},border:bAll,alignment:{horizontal:"center",vertical:"center"}});
       const vendorTag = allocVendor==="GC" ? "Green Circle" : "Boring Deco";
 
+      // Fiscal-week label for the filename and the Store Detail title. This was defined
+      // in the previous Summary block; it must survive the template redesign.
+      const fw = allocFWs.length>0
+        ? "FW"+String(allocFWs[0]).slice(-2)+"-"+String(allocFWs[allocFWs.length-1]).slice(-2)
+        : "YTD";
       const inbDate = ymdToDate(exportDate) || new Date();
       const mondayDate = mondayOf(inbDate);
       const inStoreWk = allocFWs.length ? String(allocFWs[allocFWs.length-1]).slice(-2) : "";
