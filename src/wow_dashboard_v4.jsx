@@ -308,6 +308,12 @@ export default function App() {
   // markdown is a lagging overstock signal — and it inflates ST%, which would
   // otherwise earn the store MORE cases.
   const [allocDiscount, setAllocDiscount] = useState("OFF");
+  // Balance: round each DC's case total to whole pallets (per DC, per category).
+  const [allocBalance, setAllocBalance] = useState(false);
+  // Per DC+category pallet override. Key "DC|catKey" -> integer pallet count.
+  // Absent = use the computed default (nearest pallet, min 1). DCs differ in
+  // storage space, so each one can be nudged up or down independently.
+  const [palletOverride, setPalletOverride] = useState({});
   const [allocSearch, setAllocSearch] = useState("");
   const [districtSort, setDistrictSort] = useState("s26");
   const [expandedDistrict, setExpandedDistrict] = useState(null);
@@ -852,6 +858,65 @@ export default function App() {
     } // end for catKey
     return allResults;
   },[allocFWs,allocCategory,allocDC,allocVendor,allocDiscount]);
+
+  // ── Balance to whole pallets ────────────────────────────────────────────────
+  // Cases per pallet, per category. 2" Mini is Green Circle — excluded for now.
+  const PALLET = {"3inch":32, "5inch":18, "fused":18, "cascades":18};
+  // pallets = max(1, round-half-UP(cases / palletSize)); never drop below one pallet
+  // once a DC has earned anything. Verified against: 40->36, 12->18, 8->18.
+  const balanceCases = (cases, pal) => {
+    if(!pal || cases<=0) return cases;
+    return Math.max(1, Math.floor(cases/pal + 0.5)) * pal;
+  };
+  const allocView = useMemo(()=>{
+    if(!allocBalance) return allocData;
+    const rows = allocData.map(r=>({...r, recCasesPreBal: r.recCases}));
+    const groups = {};
+    rows.forEach(r=>{
+      if(r.insuff) return;
+      const pal = PALLET[r.catKey];
+      if(!pal) return;                      // unsupported category (2" Mini) — leave alone
+      const k = r.dc+"|"+r.catKey;
+      (groups[k] = groups[k] || []).push(r);
+    });
+    Object.entries(groups).forEach(([k, grp])=>{
+      const pal = PALLET[grp[0].catKey];
+      const total = grp.reduce((a,r)=>a+(r.recCases||0),0);
+      if(total<=0) return;                  // nothing earned — do not invent a pallet
+      const ov = palletOverride[k];
+      const target = (ov!=null && ov>=0) ? ov*pal : balanceCases(total, pal);
+      let delta = target - total;
+      if(delta === 0) return;
+      if(delta < 0){
+        // REMOVE from the lowest ST% first, one case at a time.
+        const order = grp.filter(r=>(r.recCases||0)>0)
+                         .sort((a,b)=>(a.avgSTUsed??a.storeST??-1)-(b.avgSTUsed??b.storeST??-1));
+        let i=0, guard=0;
+        while(delta<0 && guard++ < 100000){
+          const r = order[i % order.length];
+          if((r.recCases||0)>0){ r.recCases--; delta++; r.balAdj=(r.balAdj||0)-1; }
+          i++;
+          if(order.every(x=>(x.recCases||0)===0)) break;
+        }
+      } else {
+        // ADD following the allocation rule: best sell-through first, respecting the
+        // category cap; only if every eligible store is capped do we exceed it.
+        const cap = (ALLOC_CATEGORIES.find(c=>c.key===grp[0].catKey)||{}).maxCases || 1;
+        const rank = grp.filter(r=>r.status!=="discounted")
+                        .sort((a,b)=>(b.storeST??-1)-(a.storeST??-1));
+        let i=0, guard=0;
+        while(delta>0 && rank.length && guard++ < 100000){
+          const r = rank[i % rank.length];
+          if((r.recCases||0) < cap){ r.recCases=(r.recCases||0)+1; delta--; r.balAdj=(r.balAdj||0)+1; }
+          i++;
+          if(i % rank.length === 0 && rank.every(x=>(x.recCases||0)>=cap)){
+            rank.forEach(x=>{ if(delta>0){ x.recCases=(x.recCases||0)+1; delta--; x.balAdj=(x.balAdj||0)+1; } });
+          }
+        }
+      }
+    });
+    return rows;
+  },[allocData,allocBalance,palletOverride]);
 
   // ── DISTRICT COMPARISON ──────────────────────────────────────────────────────
   const districtData = useMemo(()=>{
@@ -1508,14 +1573,22 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
       const wb = XLSX.utils.book_new();
 
       // Group current allocData by DC — skip 0 rec cases
+      // FIX: use r.dc (from STORE_DATA, same source the dashboard totals use) rather than
+      // re-deriving from STORE_META. STORE_META is missing the 2026 new-opening stores and
+      // disagrees with STORE_DATA for at least one store (#427), so the old lookup silently
+      // dropped rows into "UNKNOWN" and the Summary total came out below the dashboard total.
       const dcGroups = {};
-      allocData.forEach(r => {
+      const droppedRows = [];
+      allocView.forEach(r => {
         if((r.recCases||0) <= 0) return;
-        const dc = STORE_META[r.store]?.dc || "UNKNOWN";
-        if(!allocDC.includes(dc)) return;
+        const dc = r.dc || STORE_META[r.store]?.dc || "UNKNOWN";
+        if(!allocDC.includes(dc)) { droppedRows.push(r); return; }
         if(!dcGroups[dc]) dcGroups[dc] = [];
         dcGroups[dc].push(r);
       });
+      if(droppedRows.length){
+        console.warn("Allocation export: "+droppedRows.length+" row(s) with cases fell outside the selected DCs", droppedRows);
+      }
 
       if(Object.keys(dcGroups).length === 0){
         alert('No stores with Rec. Cases > 0 found for the current filter.');
@@ -1603,6 +1676,60 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
           }
         }
         XLSX.utils.book_append_sheet(wb, corrWs, "Corrections Log");
+      }
+
+      // ── STORE DETAIL (mirrors the on-screen Allocations table) ─────────────
+      // Every store in the current view, including Skip / Insufficient / Discounted,
+      // so the sheet reconciles with what the dashboard shows.
+      {
+        const fmtPct = v => (v==null || isNaN(v)) ? "" : Math.round(v*10)/10;
+        const statusLabel = r => r.insuff ? "Insufficient Data"
+          : r.status==="discounted" ? "Discounted — excluded"
+          : r.status==="skip" ? "Skip"
+          : r.status==="high" ? "High Performer"
+          : r.status==="trending" ? "Trending"
+          : r.status==="watch" ? "Watch"
+          : r.status==="standard" ? "Standard" : (r.status||"");
+        const detailHdr = ["Store","Store Name","DC","Category","Avg Wkly Sales","Pieces Sold",
+          "Pieces Rcvd","Cases Rcvd","Store ST%","Discount %","Below Cost","Discount Wks",
+          "Consec. High Wks","Current Cases","Rec. Cases","Status"];
+        const detailRows = allocView.slice().sort((a,b)=>
+          (a.dc===b.dc) ? (Number(a.store)-Number(b.store)) : (a.dc<b.dc?-1:1)
+        ).map(r=>[
+          r.store, STORE_META[r.store]?.name||"", r.dc, r.catLabel||"",
+          r.avgSales!=null?Math.round(r.avgSales):"",
+          r.insuff?"":(r.piecesReceived>0?r.piecesSold:""),
+          r.insuff?"":(r.piecesReceived||""),
+          r.insuff?"":(r.casesReceived||""),
+          (!r.insuff && r.piecesReceived>0) ? fmtPct(r.piecesSold/r.piecesReceived*100) : "",
+          r.discMax?-r.discMax:"", r.belowCost?"YES":"", r.discWks||"",
+          r.consecHigh||"", r.currentCases!=null?r.currentCases:"",
+          r.insuff?"":(r.recCases||0), statusLabel(r)
+        ]);
+        const totCases = allocView.reduce((a,r)=>a+(r.insuff?0:(r.recCases||0)),0);
+        const detailData = [
+          [`Store Detail — ${catLabel} — ${fw}${allocBalance?" — BALANCED to pallets":""}${allocVendor!=="ALL"?" — "+(allocVendor==="BD"?"Boring Deco":"Green Circle"):""}${allocDiscount!=="OFF"?" — discount filter "+allocDiscount:""} — Generated: ${now}`],
+          [],
+          detailHdr,
+          ...detailRows,
+          [],
+          ["TOTAL","","","","","","","","","","","","","",totCases,""]
+        ];
+        const detWs = XLSX.utils.aoa_to_sheet(detailData);
+        detWs['!cols'] = [{wch:8},{wch:30},{wch:13},{wch:14},{wch:14},{wch:11},{wch:11},{wch:11},
+                          {wch:10},{wch:11},{wch:11},{wch:12},{wch:16},{wch:13},{wch:11},{wch:22}];
+        detWs['!merges'] = [{s:{r:0,c:0},e:{r:0,c:detailHdr.length-1}}];
+        const dr = XLSX.utils.decode_range(detWs['!ref']);
+        for(let R=dr.s.r; R<=dr.e.r; R++){
+          for(let C=dr.s.c; C<=dr.e.c; C++){
+            const addr = XLSX.utils.encode_cell({r:R,c:C});
+            if(!detWs[addr]) continue;
+            if(R===0) detWs[addr].s = titleStyle;
+            else if(R===2 || R===detailData.length-1) detWs[addr].s = headerStyle;
+            else if(C>=4) detWs[addr].s = centerStyle;
+          }
+        }
+        XLSX.utils.book_append_sheet(wb, detWs, "Store Detail");
       }
 
       const filename = `Allocation_${catLabel.replace(/[^a-zA-Z0-9]/g,'')}_${fw}_${exportDate}.xlsx`;
@@ -2607,6 +2734,13 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
             >
               ⬇ Download Allocation
             </button>
+            <button
+              onClick={()=>setAllocBalance(v=>!v)}
+              title={"Round each DC's case total to whole pallets, per category.\n3\" Orchid = 32 cases/pallet \u00b7 5\" Orchid / Fused / Cascade = 18 cases/pallet.\nRounds to the nearest pallet (half rounds up), never below one pallet.\nCases are removed from the lowest ST% stores first, and added to the highest ST% stores within the category cap.\n2\" Mini (Green Circle) is not balanced."}
+              style={{padding:isMobile?"5px 10px":"6px 14px",background:allocBalance?"linear-gradient(135deg,#7c3aed,#6d28d9)":"#ede9e3",border:allocBalance?"none":"1px solid #d8d3c9",borderRadius:6,color:allocBalance?"#fff":"#2d3752",fontSize:isMobile?9:10,fontWeight:700,letterSpacing:0.2,cursor:"pointer",fontFamily:"DM Sans,sans-serif",display:"flex",alignItems:"center",gap:6,whiteSpace:"nowrap"}}
+            >
+              {allocBalance?"\u2713 Balanced":"\u2696 Balance"}
+            </button>
           </div>
 
           {/* Activity Log */}
@@ -2649,33 +2783,78 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
               <span style={{fontSize:13,color:"#7c3aed",letterSpacing:0.5,textTransform:"uppercase"}}>
                 {(()=>{const labels=allocCategory.map(k=>{const c=ALLOC_CATEGORIES.find(x=>x.key===k);return c?c.label:k;});return labels.join(" + ")+" Allocation · "+allocFWs.length+" Wk Baseline";})()}
               </span>
-              <span style={{fontSize:12,color:"#2d3752",fontFamily:"DM Sans,sans-serif"}}>{(()=>{if(!allocSearch.trim()) return allocData.length+" stores"; const n=/^\d+$/.test(allocSearch.trim()); return allocData.filter(r=>n?r.store===allocSearch.trim():(STORE_META[r.store]?.name||"").toLowerCase().includes(allocSearch.toLowerCase())).length+" stores";})()}</span>
+              <span style={{fontSize:12,color:"#2d3752",fontFamily:"DM Sans,sans-serif"}}>{(()=>{if(!allocSearch.trim()) return allocView.length+" stores"; const n=/^\d+$/.test(allocSearch.trim()); return allocView.filter(r=>n?r.store===allocSearch.trim():(STORE_META[r.store]?.name||"").toLowerCase().includes(allocSearch.toLowerCase())).length+" stores";})()}</span>
             </div>
             {/* DC Rec Cases Summary */}
             {(()=>{
               const dcTotals = {};
               const dcSTPct = {};
-              allocData.forEach(r=>{ if(!r.insuff && r.recCases!=null) { dcTotals[r.dc]=(dcTotals[r.dc]||0)+r.recCases; } });
+              allocView.forEach(r=>{ if(!r.insuff && r.recCases!=null) { dcTotals[r.dc]=(dcTotals[r.dc]||0)+r.recCases; } });
+              // raw (pre-pallet) totals per DC, for the stepper baseline
+              const dcRawTotals = {};
+              allocData.forEach(r=>{ if(!r.insuff && r.recCases!=null) { dcRawTotals[r.dc]=(dcRawTotals[r.dc]||0)+r.recCases; } });
+              const stepCat = allocCategory.length===1 ? allocCategory[0] : null;
+              const stepPal = stepCat ? PALLET[stepCat] : null;
               // FIX: pooled sell-through (total units / total pieces) instead of averaging
               // per-store ratios — small-denominator stores (1 case received) previously
               // read 120%+ and carried equal weight, inflating the DC figure.
-              allocData.forEach(r=>{ if(!r.insuff && r.piecesReceived>0) { if(!dcSTPct[r.dc]) dcSTPct[r.dc]={u:0,p:0}; dcSTPct[r.dc].u+=r.piecesSold; dcSTPct[r.dc].p+=r.piecesReceived; } });
+              allocView.forEach(r=>{ if(!r.insuff && r.piecesReceived>0) { if(!dcSTPct[r.dc]) dcSTPct[r.dc]={u:0,p:0}; dcSTPct[r.dc].u+=r.piecesSold; dcSTPct[r.dc].p+=r.piecesReceived; } });
               const entries = allocDC.filter(dc=>dcTotals[dc]!=null).map(dc=>({dc,cases:dcTotals[dc],st:(dcSTPct[dc]&&dcSTPct[dc].p>0)?dcSTPct[dc].u/dcSTPct[dc].p*100:null}));
-              const _preTot = allocData.reduce((a,r)=>a+(r.insuff?0:(r.recCasesPreDisc!=null?r.recCasesPreDisc:(r.recCases||0))),0);
-              const _postTot = allocData.reduce((a,r)=>a+(r.insuff?0:(r.recCases||0)),0);
-              const _excl = allocData.filter(r=>r.discExcluded).length;
+              const _preTot = allocView.reduce((a,r)=>a+(r.insuff?0:(r.recCasesPreDisc!=null?r.recCasesPreDisc:(r.recCases||0))),0);
+              const _postTot = allocView.reduce((a,r)=>a+(r.insuff?0:(r.recCases||0)),0);
+              const _excl = allocView.filter(r=>r.discExcluded).length;
               if(entries.length===0) return null;
               return (
                 <div style={{padding:"10px 16px",borderBottom:"1px solid #d8d3c9",display:"flex",flexWrap:"wrap",gap:8,alignItems:"center"}}>
                   <span style={{fontSize:12,color:"#2d3752",fontFamily:"DM Sans,sans-serif",letterSpacing:0.3,textTransform:"uppercase",marginRight:4}}>Rec. Cases by DC:</span>
                   {entries.map(function(entry){var dc=entry.dc; var cases=entry.cases; var st=entry.st; var stColor=st==null?"#5a8aaa":st>=80?"#4ade80":st>=60?"#f5a623":"#f87171"; return (
                     <span key={dc} style={{fontSize:13,fontFamily:"DM Sans,sans-serif",background:"#ede9e3",border:"1px solid #d8d3c9",borderRadius:5,padding:"4px 10px",color:"#c8934a",display:"inline-flex",flexDirection:"column",gap:1}}>
-                      <span><span style={{color:"#2d3752"}}>{dc}:</span>{" "}<span style={{color:"#4ade80",fontWeight:700}}>{cases}</span>{" cases"}</span>
+                      <span style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
+                        <span><span style={{color:"#2d3752"}}>{dc}:</span>{" "}<span style={{color:"#4ade80",fontWeight:700}}>{cases}</span>{" cases"}</span>
+                        {allocBalance && stepPal && (()=>{
+                          const key = dc+"|"+stepCat;
+                          const pallets = Math.round(cases/stepPal);
+                          const raw = dcRawTotals[dc]||0;
+                          const bump = (d)=>setPalletOverride(o=>{
+                            const next = Math.max(0, pallets + d);
+                            return {...o, [key]: next};
+                          });
+                          const btn = {width:18,height:18,lineHeight:"16px",textAlign:"center",padding:0,
+                            background:"#ede9e3",border:"1px solid #d8d3c9",borderRadius:4,cursor:"pointer",
+                            fontSize:11,color:"#2d3752",fontFamily:"DM Sans,sans-serif"};
+                          return (
+                            <span style={{display:"inline-flex",alignItems:"center",gap:3}}
+                              title={"Raw recommendation "+raw+" cases \u2192 "+pallets+" pallet"+(pallets===1?"":"s")+" of "+stepPal+".\nUse \u25bc / \u25b2 to set this DC's pallet count independently."}>
+                              <button onClick={()=>bump(-1)} disabled={pallets<=0} style={{...btn,opacity:pallets<=0?0.35:1}}>▼</button>
+                              <span style={{fontSize:10,color:"#7c3aed",fontWeight:700,fontFamily:"DM Sans,sans-serif",minWidth:34,textAlign:"center"}}>
+                                {pallets+" pal"}
+                              </span>
+                              <button onClick={()=>bump(1)} style={btn}>▲</button>
+                              {palletOverride[key]!=null && (
+                                <button onClick={()=>setPalletOverride(o=>{const n={...o}; delete n[key]; return n;})}
+                                  title="Reset to the computed default"
+                                  style={{...btn,width:16,color:"#a07030",border:"none",background:"transparent"}}>↺</button>
+                              )}
+                            </span>
+                          );
+                        })()}
+                      </span>
                       <span style={{fontSize:12,color:stColor,fontFamily:"DM Sans,sans-serif"}}>{"ST%: "+(st!=null?st.toFixed(0)+"%":"—")}</span>
                     </span>
                   );})}
                   <span style={{marginLeft:"auto",fontSize:13,fontFamily:"DM Sans,sans-serif",color:"#7c3aed",fontWeight:700}}>
                     {"Total: "+entries.reduce((a,e)=>a+e.cases,0)+" cases"}
+                    {allocBalance && (()=>{
+                      const preBal = allocView.reduce((a,r)=>a+(r.insuff?0:(r.recCasesPreBal!=null?r.recCasesPreBal:(r.recCases||0))),0);
+                      const postBal = allocView.reduce((a,r)=>a+(r.insuff?0:(r.recCases||0)),0);
+                      if(preBal===postBal) return null;
+                      return (
+                        <span style={{display:"block",fontSize:11,fontWeight:400,color:"#7c3aed",fontFamily:"DM Sans,sans-serif",marginTop:2}}
+                          title="Rounded to whole pallets per DC per category.">
+                          {"balanced to pallets: "+preBal+" \u2192 "+postBal+" ("+(postBal-preBal>0?"+":"")+(postBal-preBal)+" cases)"}
+                        </span>
+                      );
+                    })()}
                     {allocDiscount!=="OFF" && _excl>0 && (
                       <span style={{display:"block",fontSize:11,fontWeight:400,color:"#a07030",fontFamily:"DM Sans,sans-serif",marginTop:2}}
                         title="Cases before the discount filter vs after. Excluded stores are marked down and would otherwise earn cases on price-driven sell-through.">
@@ -2701,8 +2880,8 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                   const dcGroups = {};
                   const isAllocNumeric = /^\d+$/.test(allocSearch.trim());
                   const filteredAlloc = allocSearch.trim()
-                    ? allocData.filter(r=> isAllocNumeric ? r.store===allocSearch.trim() : (STORE_META[r.store]?.name||"").toLowerCase().includes(allocSearch.toLowerCase()))
-                    : allocData;
+                    ? allocView.filter(r=> isAllocNumeric ? r.store===allocSearch.trim() : (STORE_META[r.store]?.name||"").toLowerCase().includes(allocSearch.toLowerCase()))
+                    : allocView;
                   filteredAlloc.forEach(r=>{ dcGroups[r.dc]=(dcGroups[r.dc]||[]); dcGroups[r.dc].push(r); });
                   let grandTotal = 0;
                   let rowIdx = 0;
@@ -2789,7 +2968,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                   // Grand total row
                   rows.push(
                     <tr key="grand-total" style={{background:"#ede9e3",borderTop:"2px solid #7c3aed"}}>
-                      <td colSpan={subtotalCols} style={{padding:"12px 14px",fontSize:14,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif",letterSpacing:0.5,fontWeight:700,textTransform:"uppercase"}}>{"Grand Total · "+allocData.length+" stores"}</td>
+                      <td colSpan={subtotalCols} style={{padding:"12px 14px",fontSize:14,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif",letterSpacing:0.5,fontWeight:700,textTransform:"uppercase"}}>{"Grand Total · "+allocView.length+" stores"}</td>
                       <td style={{padding:"12px 14px",textAlign:"right",fontSize:17,fontWeight:700,color:"#0a0f1e",fontFamily:"DM Sans,sans-serif"}}>{grandTotal}</td>
                       <td style={{padding:"12px 14px",fontSize:13,color:"#2d3752",fontFamily:"DM Sans,sans-serif"}}>{"total cases"}</td>
                     </tr>
