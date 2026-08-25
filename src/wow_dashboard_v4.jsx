@@ -1793,9 +1793,9 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
         const shipDate = String(_sd.del.getFullYear())
           + String(_sd.del.getMonth()+1).padStart(2,"0")
           + String(_sd.del.getDate()).padStart(2,"0");
-        const hasNewStore = rows.some(r=>r.isNewStore);
-        const banner = hasNewStore ? C_PURP_M : C_GREEN;
-        const data = [[dc+" — "+vendorTag+(hasNewStore?"  (includes new store opening)":""),"","","",""], DC_HDR.slice()];
+        // DC tabs must match the template exactly: header on row 1, data from row 2.
+        // No banner/title row above the header.
+        const data = [DC_HDR.slice()];
         const styles = [];
         rows.slice().sort((a,b)=>Number(a.store)-Number(b.store)).forEach(r=>{
           data.push([CAT_SKU[r.catKey]||"", Number(r.store), r.recCases||0, dc, shipDate]);
@@ -1803,18 +1803,16 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
         });
         const ws = XLSX.utils.aoa_to_sheet(data);
         ws['!cols']=[{wch:10},{wch:8},{wch:6},{wch:13},{wch:11}];
-        ws['!freeze']={xSplit:0,ySplit:2};
-        ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:DC_HDR.length-1}}];
-        DC_HDR.forEach((_,c)=>{ const ad=XLSX.utils.encode_cell({r:0,c}); if(!ws[ad]) ws[ad]={t:"s",v:""};
-          ws[ad].s={fill:fill(banner),font:{bold:true,sz:11,color:{rgb:hasNewStore?"FFFFFFFF":"FF1F3864"},name:"Calibri"},border:bAll,alignment:{horizontal:"left",vertical:"center"}}; });
-        DC_HDR.forEach((_,c)=>{ const ad=XLSX.utils.encode_cell({r:1,c}); if(ws[ad]) ws[ad].s=cHdr(C_BLUE); });
-        styles.forEach((rgb,i)=>{ DC_HDR.forEach((_,c)=>{ const ad=XLSX.utils.encode_cell({r:i+2,c}); if(ws[ad]) ws[ad].s=cData(rgb); }); });
+        ws['!freeze']={xSplit:0,ySplit:1};
+        DC_HDR.forEach((_,c)=>{ const ad=XLSX.utils.encode_cell({r:0,c}); if(ws[ad]) ws[ad].s=cHdr(C_BLUE); });
+        styles.forEach((rgb,i)=>{ DC_HDR.forEach((_,c)=>{ const ad=XLSX.utils.encode_cell({r:i+1,c}); if(ws[ad]) ws[ad].s=cData(rgb); }); });
         XLSX.utils.book_append_sheet(wb, ws, (dc+" "+vendorTag).substring(0,31));
       });
 
       // NOTE: Excel tab colours are NOT supported by xlsx-js-style@1.2.0 (verified — no
       // <sheetPr><tabColor/> is emitted for any property form). Colour-coding is therefore
-      // carried inside each sheet: a coloured banner row naming the DC.
+      // not applied. DC sheets match the template exactly (header row 1, data from row 2),
+      // so colour-coding is carried by the cell fills only.
 
 
       // ── CORRECTIONS LOG ───────────────────────────────────────────────────
