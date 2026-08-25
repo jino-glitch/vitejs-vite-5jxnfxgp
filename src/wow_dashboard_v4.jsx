@@ -607,6 +607,10 @@ export default function App() {
   // ── ALLOCATIONS ──────────────────────────────────────────────────────────────
   const SAFETY = 1.15;
   const MIN_DELIVERY_WKS = allocCategory.every(c=>c==="3inch"||c==="cascades"||c==="fused") ? 1 : 2;
+  // What makes ST% trustworthy is the SIZE of the denominator, not how many separate
+  // weeks it arrived across. A store with one full case is just as measurable as a store
+  // with the same pieces spread over two deliveries. Gate on pieces received instead.
+  const MIN_PIECES = 10;
   const CONSEC_HIGH_WKS = 3;
   const HIGH_ST = 85;
   const LOW_ST = 60;       // skip threshold — unchanged
@@ -728,11 +732,17 @@ export default function App() {
       const casesLast4 = FLOOR_WKS.reduce((a,fw)=> a + ((catOutForGate[store]?.[fw]?.[0])||0), 0);
       const emptyRun = casesLast4 === 0;
 
-      if(deliveryWks.length < MIN_DELIVERY_WKS) {
+      // Pieces received across the baseline (merged receipts) — the ST% denominator.
+      const piecesInWindow = allocFWs.reduce((a,fw)=> a + ((catOutForGate[store]?.[fw]?.[1])||0), 0);
+      // Single-delivery stores are evaluable but capped at +1: one receipt is a thinner
+      // signal than a sustained run, so they cannot earn the +2 tier.
+      const singleDelivery = deliveryWks.length < MIN_DELIVERY_WKS;
+
+      if(piecesInWindow < MIN_PIECES) {
         return {store,dc,catKey,catLabel:catDef.label,insuff:!emptyRun,avgSales:null,avgST:null,
                 piecesSold:0,piecesReceived:0,casesReceived:0,consecHigh:0,currentCases:null,
                 recCases: emptyRun?1:null, status: emptyRun?"floor":"insuff",
-                emptyRun, casesLast4, packSize:catDef.packSize||10};
+                emptyRun, casesLast4, piecesInWindow, packSize:catDef.packSize||10};
       }
 
       // Avg wkly sales = this store's own sales on delivery weeks
@@ -860,6 +870,10 @@ export default function App() {
         recCases=1; status="standard";
       }
 
+      // Single-delivery cap: evaluable (enough pieces) but only one receipt in the
+      // window, so the ST% rests on a single delivery. Allow +1, never the +2 tier.
+      if(singleDelivery && recCases>1){ recCases=1; if(status==="high"||status==="trending") status="watch"; }
+
       // Discount filter — keep the pre-filter value so the UI can show before/after.
       const recCasesPreDisc = recCases, statusPreDisc = status;
       if(discExcluded) { recCases=0; status="discounted"; }
@@ -868,7 +882,7 @@ export default function App() {
 
       return {store,dc,catKey,catLabel:catDef.label,insuff:false,avgSales,avgST,piecesSold:unitsSold,piecesReceived,casesReceived,consecHigh,currentCases,recCases,status,packSize,isTrending,isHighVol,
               discMax,discWks,discStreak,discRun,belowCost,discActive,discChronic,discLifted,discExcluded,recCasesPreDisc,statusPreDisc,
-              emptyRun,casesLast4};
+              emptyRun,casesLast4,piecesInWindow,singleDelivery};
     }).filter(r=>allocDC.includes(r.dc))
       .sort((a,b)=>a.dc===b.dc?Number(a.store)-Number(b.store):a.dc.localeCompare(b.dc));
     allResults.push(...catRows);
