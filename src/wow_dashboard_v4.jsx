@@ -1789,8 +1789,17 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
 
   const dashboard = (
     <div style={{minHeight:"100vh",background:"#f5f4f0",color:"#0a0f1e",fontFamily:"'DM Sans',sans-serif",padding:"0 0 60px 0"}}>
+      {/* The Vite starter's index.css caps #root at 1280px with 2rem side padding, which
+          is what creates the side borders and forces the tables into horizontal scroll.
+          Widen by 40% (1280 -> 1792) and drop the side padding. Scoped override — no
+          change to index.css needed. */}
+      <style>{`
+        #root { max-width: 1792px !important; width: 100% !important; margin: 0 auto !important;
+                padding-left: 0 !important; padding-right: 0 !important; text-align: left !important; }
+        body { margin: 0 !important; display: block !important; place-items: initial !important; }
+      `}</style>
       {/* Header */}
-      <div style={{background:"#ffffff",borderBottom:"1px solid #d8d3c9",padding:isMobile?"10px 16px":"14px 28px",display:"flex",alignItems:"center",gap:isMobile?10:20}}>
+      <div style={{background:"#ffffff",borderBottom:"1px solid #d8d3c9",padding:isMobile?"10px 16px":"14px 16px",display:"flex",alignItems:"center",gap:isMobile?10:20}}>
         <img src={LOGO_B64} alt="Sprouts" style={{height:isMobile?32:44,objectFit:"contain",flexShrink:0}}/>
         <div style={{minWidth:0}}>
           <div style={{fontSize:isMobile?12:16,fontWeight:700,color:"#0a0f1e",letterSpacing:0.2,fontFamily:"'DM Sans',sans-serif"}}>FLORAL SALES DASHBOARD</div>
@@ -1843,7 +1852,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
       </div>
 
       {/* Tabs */}
-      <div style={{padding:isMobile?"8px 12px 0":"16px 28px 0",display:"flex",gap:isMobile?4:8,borderBottom:"1px solid #d8d3c9",background:"#f5f4f0",overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none"}}>
+      <div style={{padding:isMobile?"8px 12px 0":"16px 16px 0",display:"flex",gap:isMobile?4:8,borderBottom:"1px solid #d8d3c9",background:"#f5f4f0",overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none"}}>
         <button style={tabS(tab==="wow")} onClick={()=>setTab("wow")}>WoW</button>
         <button style={tabS(tab==="yoy")} onClick={()=>setTab("yoy")}>YoY</button>
         <button style={tabS(tab==="ytd")} onClick={()=>setTab("ytd")}>YTD Summary</button>
