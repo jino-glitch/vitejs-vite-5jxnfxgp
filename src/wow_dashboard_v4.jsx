@@ -297,7 +297,11 @@ export default function App() {
   const [allocCustomFrom, setAllocCustomFrom] = useState(ALL_FWS_FULL[0]);
   const [allocCustomTo, setAllocCustomTo] = useState(ALL_FWS_FULL[ALL_FWS_FULL.length-1]);
   const [allocCategory, setAllocCategory] = useState(["5inch"]);
-  const [allocDC, setAllocDC] = useState([...ALL_DCS]);
+  // Allocations tab defaults to the 3 western DCs — the only DCs BD ships to, and the
+  // only ones with DC-template receipts. Eastern DCs have no BD outbound, so they would
+  // otherwise fill the tab with Insufficient Data rows. User can still select them.
+  const ALLOC_DEFAULT_DCS = ["FULRTNCADC","PHOENXAZDC","TRACYCADC"].filter(d=>ALL_DCS.includes(d));
+  const [allocDC, setAllocDC] = useState(ALLOC_DEFAULT_DCS.length?ALLOC_DEFAULT_DCS:[...ALL_DCS]);
   const [allocVendor, setAllocVendor] = useState("ALL"); // ALL = blended (BD+GC), BD = Boring Deco only
   // Discount filter: OFF = ignore markdowns (before). 10/20/30/30+ = exclude stores
   // marked down at/above that depth (after). Sprouts sets retail unilaterally, so a
