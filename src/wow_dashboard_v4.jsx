@@ -306,12 +306,12 @@ export default function App() {
   // otherwise fill the tab with Insufficient Data rows. User can still select them.
   const ALLOC_DEFAULT_DCS = ["FULRTNCADC","PHOENXAZDC","TRACYCADC"].filter(d=>ALL_DCS.includes(d));
   const [allocDC, setAllocDC] = useState(ALLOC_DEFAULT_DCS.length?ALLOC_DEFAULT_DCS:[...ALL_DCS]);
-  const [allocVendor, setAllocVendor] = useState("ALL"); // ALL = blended (BD+GC), BD = Boring Deco only
+  const [allocVendor, setAllocVendor] = useState("BD"); // ALL = blended (BD+GC), BD = Boring Deco only
   // Discount filter: OFF = ignore markdowns (before). 10/20/30/30+ = exclude stores
   // marked down at/above that depth (after). Sprouts sets retail unilaterally, so a
   // markdown is a lagging overstock signal — and it inflates ST%, which would
   // otherwise earn the store MORE cases.
-  const [allocDiscount, setAllocDiscount] = useState("OFF");
+  const [allocDiscount, setAllocDiscount] = useState("30");
   // Balance: round each DC's case total to whole pallets (per DC, per category).
   const [allocBalance, setAllocBalance] = useState(false);
   // Per DC+category pallet override. Key "DC|catKey" -> integer pallet count.
@@ -1616,6 +1616,20 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
   // Export date — default to next Tuesday from today
   // SKU map by category
   const CAT_SKU = {"5inch":"DC62042","3inch":"DC62041","fused":"DC62043","cascades":"DC62047"};
+  // Item label + each-cost per category — matches the DC TEMPLATE Summary block.
+  // Costs from NocoDB 3a-sprouts-sku-map-bd. Case cost = each cost x pack.
+  const CAT_ITEM = {
+    "5inch":   {label:'5" Orchid (BD)',   each:12.874, pack:10},
+    "3inch":   {label:'3" Orchid (BD)',   each:8.544,  pack:15},
+    "fused":   {label:'5" Fused (BD)',    each:18.194, pack:10},
+    "cascades":{label:'Cascade (BD)',     each:17.667, pack:6},
+    "2inch":   {label:'2" Mini Orchid',   each:0,      pack:12},
+  };
+  // Ship type per DC — FULRTNCADC is delivered direct, the others cross-dock via Fullerton.
+  const DC_SHIP_TYPE = (dc) => dc==="FULRTNCADC" ? "Delivered" : "Ful X-Dock";
+  const ymdToDate = (v) => (/^\d{8}$/.test(String(v))) ? new Date(+String(v).slice(0,4), +String(v).slice(4,6)-1, +String(v).slice(6,8)) : null;
+  const addDays = (d,n) => { const x=new Date(d); x.setDate(x.getDate()+n); return x; };
+  const mondayOf = (d) => { const x=new Date(d); const off=(x.getDay()+6)%7; x.setDate(x.getDate()-off); x.setHours(0,0,0,0); return x; };
 
   // Ship date per DC — Tuesday DCs use exportDate, Wednesday DCs use +1 day
   const getDCShipDate = (dc, baseDate) => {
@@ -1678,63 +1692,108 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
       const headerStyle = {alignment:{horizontal:"center",vertical:"center"},font:{bold:true}};
       const titleStyle = {alignment:{horizontal:"center",vertical:"center"},font:{bold:true,sz:13}};
 
-      // ── SUMMARY SHEET (first tab) ──────────────────────────────────────────
-      const fw = allocFWs.length>0 ? "FW"+String(allocFWs[0]).slice(-2)+"-"+String(allocFWs[allocFWs.length-1]).slice(-2) : "YTD";
-      const summaryData = [
-        [`Allocation Summary — ${catLabel} — ${fw} — Generated: ${now}`,"","","","",""],
-        ["","","","","",""],
-        ["DC","Ship Date","Item #","Pack","Total Cases","Stores"],
-      ];
+      // ── SUMMARY + DC SHEETS — DC TEMPLATE design ───────────────────────────
+      // Palette taken from 2026 DC TEMPLATE: header blue BDD7EE, data green E2EFDA,
+      // new-store purple 7030A0 (title) / 9B59B6 (header) / F3E5F5 (row),
+      // DC-sheet new-store highlight E8D5F5.
+      const C_BLUE="FFBDD7EE", C_GREEN="FFE2EFDA", C_PURP_D="FF7030A0",
+            C_PURP_M="FF9B59B6", C_PURP_L="FFF3E5F5", C_PURP_ROW="FFE8D5F5", C_WHITE="FFFFFFFF";
+      const thin={style:"thin",color:{rgb:"FF9CA3AF"}};
+      const bAll={top:thin,bottom:thin,left:thin,right:thin};
+      const fill=(rgb)=>({patternType:"solid",fgColor:{rgb},bgColor:{rgb}});
+      const cHdr =(rgb)=>({fill:fill(rgb),font:{bold:true,sz:10,name:"Calibri"},border:bAll,alignment:{horizontal:"center",vertical:"center"}});
+      const cData=(rgb)=>({fill:fill(rgb),font:{sz:10,name:"Calibri"},border:bAll,alignment:{horizontal:"center",vertical:"center"}});
+      const vendorTag = allocVendor==="GC" ? "Green Circle" : "Boring Deco";
 
-      let grandCases = 0, grandStores = 0;
-      Object.entries(dcGroups).forEach(([dc, rows]) => {
-        const shipDate = getDCShipDate(dc, exportDate);
-        const totalCases = rows.reduce((a,r)=>a+(r.recCases||0),0);
-        summaryData.push([dc, shipDate, sku, packSize, totalCases, rows.length]);
-        grandCases += totalCases;
-        grandStores += rows.length;
+      const inbDate = ymdToDate(exportDate) || new Date();
+      const mondayDate = mondayOf(inbDate);
+      const inStoreWk = allocFWs.length ? String(allocFWs[allocFWs.length-1]).slice(-2) : "";
+      const fmtD = (d)=> d ? (d.getMonth()+1)+"/"+d.getDate()+"/"+d.getFullYear() : "";
+
+      const SUM_HDR = ["DC","Ship Date","Del Date","Ship Type","Item","Item #","Each Cost","Case Cost","Pack","Total Cases","#PO"];
+      const sumRows = [];
+      sumRows.push(["Monday Date", fmtD(mondayDate)]);
+      sumRows.push(["In Store Week", inStoreWk, "", "Vendor:", vendorTag]);
+      sumRows.push([]);
+      const sumStyle = {};                       // "r,c" -> style
+      const mark=(r,c,st)=>{ sumStyle[r+","+c]=st; };
+      // one blue header + one green data row per DC per category, as in the template
+      Object.entries(dcGroups).forEach(([dc, rows])=>{
+        const byCat = {};
+        rows.forEach(r=>{ (byCat[r.catKey]=byCat[r.catKey]||[]).push(r); });
+        Object.entries(byCat).forEach(([ck, crs])=>{
+          const it = CAT_ITEM[ck] || {label:ck, each:0, pack:10};
+          const ship = ymdToDate(getDCShipDate(dc, exportDate));
+          const del  = ship ? addDays(ship,1) : null;
+          const cases = crs.reduce((a,r)=>a+(r.recCases||0),0);
+          const hr = sumRows.length; sumRows.push(SUM_HDR.slice());
+          SUM_HDR.forEach((_,c)=>mark(hr,c,cHdr(C_BLUE)));
+          const dr = sumRows.length;
+          sumRows.push([dc, fmtD(ship), fmtD(del), DC_SHIP_TYPE(dc), it.label, CAT_SKU[ck]||"",
+                        +it.each.toFixed(3), +(it.each*it.pack).toFixed(2), it.pack, cases, ""]);
+          SUM_HDR.forEach((_,c)=>mark(dr,c,cData(C_GREEN)));
+          sumRows.push([]);
+        });
       });
-      summaryData.push(["","","","","",""]);
-      summaryData.push(["TOTAL","","","",grandCases,grandStores]);
-
-      const summaryWs = XLSX.utils.aoa_to_sheet(summaryData);
-      summaryWs['!cols'] = [{wch:14},{wch:12},{wch:12},{wch:8},{wch:14},{wch:10}];
-      summaryWs['!merges'] = [{s:{r:0,c:0},e:{r:0,c:5}}];
-
-      // Style all cells
-      const sr = XLSX.utils.decode_range(summaryWs['!ref']);
-      for(let R=sr.s.r; R<=sr.e.r; R++){
-        for(let C=sr.s.c; C<=sr.e.c; C++){
-          const addr = XLSX.utils.encode_cell({r:R,c:C});
-          if(!summaryWs[addr]) continue;
-          if(R===0) summaryWs[addr].s = titleStyle;
-          else if(R===2) summaryWs[addr].s = headerStyle;
-          else if(R===summaryData.length-1) summaryWs[addr].s = headerStyle; // TOTAL row
-          else summaryWs[addr].s = centerStyle;
-        }
+      // New Store Openings block — dark / medium / light purple
+      const newRows = allocView.filter(r=>r.isNewStore && (r.recCases||0)>0 && allocDC.includes(r.dc));
+      if(newRows.length){
+        sumRows.push([]);
+        const tr = sumRows.length;
+        sumRows.push(["New Store Openings This Week"]);
+        mark(tr,0,{fill:fill(C_PURP_D),font:{bold:true,sz:11,color:{rgb:"FFFFFFFF"},name:"Calibri"},border:bAll,alignment:{horizontal:"left",vertical:"center"}});
+        const NH=["Store","DC","Item","Open Date","Store Name","","Cases","Units"];
+        const hr2 = sumRows.length; sumRows.push(NH.slice());
+        NH.forEach((_,c)=>mark(hr2,c,{fill:fill(C_PURP_M),font:{bold:true,sz:10,color:{rgb:"FFFFFFFF"},name:"Calibri"},border:bAll,alignment:{horizontal:"center",vertical:"center"}}));
+        newRows.forEach(r=>{
+          const it = CAT_ITEM[r.catKey]||{pack:10};
+          const rr = sumRows.length;
+          sumRows.push([r.store, r.dc, CAT_SKU[r.catKey]||"", r.openDate||"", r.storeName||"", "",
+                        r.recCases||0, (r.recCases||0)*(it.pack||10)]);
+          NH.forEach((_,c)=>mark(rr,c,cData(C_PURP_L)));
+        });
       }
-      XLSX.utils.book_append_sheet(wb, summaryWs, "Summary");
+      const summaryWs = XLSX.utils.aoa_to_sheet(sumRows);
+      summaryWs['!cols'] = [{wch:30},{wch:21},{wch:13},{wch:12},{wch:16},{wch:9},{wch:11},{wch:11},{wch:8},{wch:13},{wch:8}];
+      // row 1/2 label styling
+      [["A1",true],["A2",true],["D2",true]].forEach(([ad,b])=>{ if(summaryWs[ad]) summaryWs[ad].s={font:{bold:b,sz:10,name:"Calibri"}}; });
+      ["B1","B2","E2"].forEach(ad=>{ if(summaryWs[ad]) summaryWs[ad].s={font:{sz:10,name:"Calibri"}}; });
+      Object.entries(sumStyle).forEach(([k,st])=>{
+        const [r,c]=k.split(",").map(Number);
+        const ad=XLSX.utils.encode_cell({r,c});
+        if(!summaryWs[ad]) summaryWs[ad]={t:"s",v:""};
+        summaryWs[ad].s=st;
+      });
+      XLSX.utils.book_append_sheet(wb, summaryWs, ("Summary "+vendorTag).substring(0,31));
+      if(wb.Sheets["Summary "+vendorTag]) { /* tab colour set below */ }
 
       // ── DC SHEETS ──────────────────────────────────────────────────────────
+      const DC_HDR = ["SKU","Store","Qty","DC","Ship Date"];
       Object.entries(dcGroups).forEach(([dc, rows]) => {
         const shipDate = getDCShipDate(dc, exportDate);
-        const sheetData = [
-          ["SKU","Store","Qty","DC","Ship Date"],
-          ...rows.map(r => [sku, Number(r.store), r.recCases, dc, shipDate])
-        ];
-        const ws = XLSX.utils.aoa_to_sheet(sheetData);
-        ws['!cols'] = [{wch:12},{wch:10},{wch:8},{wch:14},{wch:12}];
-
-        const range = XLSX.utils.decode_range(ws['!ref']);
-        for(let R=range.s.r; R<=range.e.r; R++){
-          for(let C=range.s.c; C<=range.e.c; C++){
-            const addr = XLSX.utils.encode_cell({r:R,c:C});
-            if(!ws[addr]) continue;
-            ws[addr].s = R===0 ? headerStyle : centerStyle;
-          }
-        }
-        XLSX.utils.book_append_sheet(wb, ws, dc.substring(0,31));
+        const hasNewStore = rows.some(r=>r.isNewStore);
+        const banner = hasNewStore ? C_PURP_M : C_GREEN;
+        const data = [[dc+" — "+vendorTag+(hasNewStore?"  (includes new store opening)":""),"","","",""], DC_HDR.slice()];
+        const styles = [];
+        rows.slice().sort((a,b)=>Number(a.store)-Number(b.store)).forEach(r=>{
+          data.push([CAT_SKU[r.catKey]||"", Number(r.store), r.recCases||0, dc, shipDate]);
+          styles.push(r.isNewStore ? C_PURP_ROW : C_WHITE);
+        });
+        const ws = XLSX.utils.aoa_to_sheet(data);
+        ws['!cols']=[{wch:10},{wch:8},{wch:6},{wch:13},{wch:11}];
+        ws['!freeze']={xSplit:0,ySplit:2};
+        ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:DC_HDR.length-1}}];
+        DC_HDR.forEach((_,c)=>{ const ad=XLSX.utils.encode_cell({r:0,c}); if(!ws[ad]) ws[ad]={t:"s",v:""};
+          ws[ad].s={fill:fill(banner),font:{bold:true,sz:11,color:{rgb:hasNewStore?"FFFFFFFF":"FF1F3864"},name:"Calibri"},border:bAll,alignment:{horizontal:"left",vertical:"center"}}; });
+        DC_HDR.forEach((_,c)=>{ const ad=XLSX.utils.encode_cell({r:1,c}); if(ws[ad]) ws[ad].s=cHdr(C_BLUE); });
+        styles.forEach((rgb,i)=>{ DC_HDR.forEach((_,c)=>{ const ad=XLSX.utils.encode_cell({r:i+2,c}); if(ws[ad]) ws[ad].s=cData(rgb); }); });
+        XLSX.utils.book_append_sheet(wb, ws, (dc+" "+vendorTag).substring(0,31));
       });
+
+      // NOTE: Excel tab colours are NOT supported by xlsx-js-style@1.2.0 (verified — no
+      // <sheetPr><tabColor/> is emitted for any property form). Colour-coding is therefore
+      // carried inside each sheet: a coloured banner row naming the DC.
+
 
       // ── CORRECTIONS LOG ───────────────────────────────────────────────────
       const corrRows = CORRECTIONS_LOG.filter(r=>allocDC.includes(r.dc));
