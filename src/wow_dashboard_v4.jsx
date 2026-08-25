@@ -1710,9 +1710,23 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
       const fw = allocFWs.length>0
         ? "FW"+String(allocFWs[0]).slice(-2)+"-"+String(allocFWs[allocFWs.length-1]).slice(-2)
         : "YTD";
+      // INBOUND DATE = Fullerton's DELIVERY date (a Tuesday).
+      //   FULRTNCADC  : "Delivered"   ship = inbound - 1 (Mon), del = inbound
+      //   other DCs   : "Ful X-Dock"  ship = inbound,           del = inbound + 1
+      // The DC tabs' "Ship Date" column carries the DELIVERY date, matching the template.
       const inbDate = ymdToDate(exportDate) || new Date();
       const mondayDate = mondayOf(inbDate);
-      const inStoreWk = allocFWs.length ? String(allocFWs[allocFWs.length-1]).slice(-2) : "";
+      const dcShipDel = (dc) => {
+        const isDirect = dc==="FULRTNCADC";
+        const ship = isDirect ? addDays(inbDate,-1) : inbDate;
+        const del  = isDirect ? inbDate : addDays(inbDate,1);
+        return {ship, del};
+      };
+      // In-store week = fiscal week of the DELIVERY week, not the last data week.
+      // Anchor: Monday 2026-08-31 is FW36.
+      const FW_ANCHOR_MON = new Date(2026,7,31), FW_ANCHOR_NUM = 36;
+      const inStoreWk = String(FW_ANCHOR_NUM +
+        Math.round((mondayDate - FW_ANCHOR_MON)/(7*86400000)));
       const fmtD = (d)=> d ? (d.getMonth()+1)+"/"+d.getDate()+"/"+d.getFullYear() : "";
 
       const SUM_HDR = ["DC","Ship Date","Del Date","Ship Type","Item","Item #","Each Cost","Case Cost","Pack","Total Cases","#PO"];
@@ -1728,8 +1742,8 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
         rows.forEach(r=>{ (byCat[r.catKey]=byCat[r.catKey]||[]).push(r); });
         Object.entries(byCat).forEach(([ck, crs])=>{
           const it = CAT_ITEM[ck] || {label:ck, each:0, pack:10};
-          const ship = ymdToDate(getDCShipDate(dc, exportDate));
-          const del  = ship ? addDays(ship,1) : null;
+          const sd = dcShipDel(dc);
+          const ship = sd.ship, del = sd.del;
           const cases = crs.reduce((a,r)=>a+(r.recCases||0),0);
           const hr = sumRows.length; sumRows.push(SUM_HDR.slice());
           SUM_HDR.forEach((_,c)=>mark(hr,c,cHdr(C_BLUE)));
@@ -1775,7 +1789,10 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
       // ── DC SHEETS ──────────────────────────────────────────────────────────
       const DC_HDR = ["SKU","Store","Qty","DC","Ship Date"];
       Object.entries(dcGroups).forEach(([dc, rows]) => {
-        const shipDate = getDCShipDate(dc, exportDate);
+        const _sd = dcShipDel(dc);
+        const shipDate = String(_sd.del.getFullYear())
+          + String(_sd.del.getMonth()+1).padStart(2,"0")
+          + String(_sd.del.getDate()).padStart(2,"0");
         const hasNewStore = rows.some(r=>r.isNewStore);
         const banner = hasNewStore ? C_PURP_M : C_GREEN;
         const data = [[dc+" — "+vendorTag+(hasNewStore?"  (includes new store opening)":""),"","","",""], DC_HDR.slice()];
