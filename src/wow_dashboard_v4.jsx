@@ -835,9 +835,15 @@ export default function App() {
       // active = 2+ consecutive most-recent weeks, unless the last 2 weeks are clean
       const discActive = discStreak>=2 && !last2Clean;
       const discChronic = discRun>=4;
+      // BELOW COST fires on a SINGLE week, anywhere in the window, regardless of streak.
+      // Selling under BD cost is liquidation, not a promotion — one week is enough signal.
+      // The streak rules alone missed this: e.g. #278 (1-wk trailing streak) and #284
+      // (discounted mid-window, so discStreak was 0 because the tail week was clean).
+      // Still lifted by the last-2-weeks-clean rule so a store recovers on its own.
+      const discBelowCostHit = belowCost && !last2Clean;
       const discLifted = discWks>0 && last2Clean;
       const discThresh = allocDiscount==="OFF" ? null : (allocDiscount==="30+" ? 30 : parseInt(allocDiscount,10));
-      const discExcluded = discThresh!=null && discMax>=discThresh && (discActive||discChronic);
+      const discExcluded = discThresh!=null && discMax>=discThresh && (discActive||discChronic||discBelowCostHit);
 
       // Store ST% = units sold / pieces received (cases x pack)
       const storeSTPct = piecesReceived>0 ? unitsSold/piecesReceived*100 : null;
@@ -885,7 +891,7 @@ export default function App() {
       if(emptyRun && (recCases||0) < 1) { recCases = 1; status = "floor"; }
 
       return {store,dc,catKey,catLabel:catDef.label,insuff:false,avgSales,avgST,piecesSold:unitsSold,piecesReceived,casesReceived,consecHigh,currentCases,recCases,status,packSize,isTrending,isHighVol,
-              discMax,discWks,discStreak,discRun,belowCost,discActive,discChronic,discLifted,discExcluded,recCasesPreDisc,statusPreDisc,
+              discMax,discWks,discStreak,discRun,belowCost,discActive,discChronic,discBelowCostHit,discLifted,discExcluded,recCasesPreDisc,statusPreDisc,
               emptyRun,casesLast4,piecesInWindow,singleDelivery};
     }).filter(r=>allocDC.includes(r.dc))
       .sort((a,b)=>a.dc===b.dc?Number(a.store)-Number(b.store):a.dc.localeCompare(b.dc));
@@ -2968,7 +2974,7 @@ Use tools to look up specific stores, DCs, districts, or weekly trends. Be conci
                             const dmax=r.discMax||0;
                             if(!dmax) return <td style={{padding:cellP,textAlign:"right",fontSize:13,color:"#8a8578",fontFamily:"DM Sans,sans-serif",borderBottom:"1px solid #d8d3c9"}}>—</td>;
                             const clr = r.belowCost?"#dc2626":(dmax>=30?"#f87171":(dmax>=20?"#e8991c":"#a07030"));
-                            const note = (r.belowCost?"below cost · ":"")+r.discWks+" wk"+(r.discWks===1?"":"s")
+                            const note = (r.belowCost?"below cost (excludes on a single week) · ":"")+r.discWks+" wk"+(r.discWks===1?"":"s")
                                        +(r.discStreak>=2?" · "+r.discStreak+" in a row":"")
                                        +(r.discChronic?" · chronic":"")
                                        +(r.discLifted?" · lifted (2 clean wks)":"")
